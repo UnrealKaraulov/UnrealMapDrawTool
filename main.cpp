@@ -123,6 +123,18 @@ float GetMaxZ_fromPercent(float z, float cell_height, float z_offset, float z_he
 	return z + (cell_height / 100.0f * z_offset) + (cell_height / 100.0f * z_height);
 }
 
+float GetHeight_fromPercent(float cell_height, float z_height)
+{
+	return cell_height / 100.0f * z_height;
+}
+
+float GetHeightOffset_fromPercent(float cell_height, float z_offset)
+{
+	return cell_height / 100.0f * z_offset;
+}
+
+
+
 void GenerateUnrealMap(float cell_size, float cell_height, float cell_x, float cell_y, int cell_levels, int cell_layers)
 {
 	int cur_item = 0;
@@ -443,6 +455,8 @@ bool setup_end = false;
 const char* items[] = { "NONE", "BRUSH", "HOSTAGE", "TERRORIST", "COUNTER-TERRORIST", "LIGHT", "BUYZONE BRUSH", "BOMBZONE BRUSH" };
 cell_type items_types[] = { cell_type::cell_none, cell_type::cell_brush, cell_type::cell_hostage, cell_type::cell_player_TT, cell_type::cell_player_CT,
 		cell_type::cell_light, cell_type::cell_buyzone, cell_type::cell_bombzone };
+
+
 const char* current_item = "NONE";
 cell_type c_type = cell_type::cell_none;
 char cur_cell_height[256] = "100";
@@ -797,6 +811,20 @@ void DrawUnrealGUI()
 
 								if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem))
 								{
+									ImGui::BeginTooltip();
+									ImGui::Text("Type: %s", items[cell_list[cur_item].type]);
+									ImGui::Text("Pos %d/%d", y + 1, x + 1);
+									ImGui::Text("Size %d units", atoi(cell_size));
+									if (cell_list[cur_item].type == cell_type::cell_brush
+										|| cell_list[cur_item].type == cell_type::cell_buyzone
+										|| cell_list[cur_item].type == cell_type::cell_bombzone)
+									{
+										ImGui::Text("Height %d units", (int)GetHeight_fromPercent((float)atoi(cell_height), cell_list[cur_item].height));
+										ImGui::Text("Height start %d units", (int)GetHeightOffset_fromPercent((float)atoi(cell_height), cell_list[cur_item].height_offset));
+									}
+									ImGui::EndTooltip();
+
+
 									if (ImGui::IsMouseDown(ImGuiMouseButton_Left))
 									{
 										if (c_type == cell_type::cell_none)
@@ -913,7 +941,7 @@ int main(int, char**)
 #endif
 
 	// Create window with graphics context
-	GLFWwindow* window = glfwCreateWindow(1280, 720, "Unreal Map Draw Tool 1.1", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(1280, 720, "Unreal Map Draw Tool 1.2", NULL, NULL);
 	if (window == NULL)
 		return 1;
 	glfwMakeContextCurrent(window);
