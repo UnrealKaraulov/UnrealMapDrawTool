@@ -368,7 +368,7 @@ void GenerateUnrealMap(float cell_size, float cell_height, float cell_x, float c
 								}
 								else
 									output_entities << "\"classname\" \"hostage_entity\"" << std::endl;
-								output_entities << GenerateOriginString(item_x_offset + cell_size / 2.0f + cell_size * x, cell_size / 2.0f  + item_y_offset - cell_size * y,
+								output_entities << GenerateOriginString(item_x_offset + cell_size / 2.0f + cell_size * x, item_y_offset - cell_size / 2.0f - cell_size * y,
 									GetMinZ_fromPercent(item_z_offset, cell_height, (float)cur_cell.height_offset) + cell_height / 2.0f);
 								output_entities << std::endl;
 							}
@@ -403,8 +403,10 @@ void GenerateUnrealMap(float cell_size, float cell_height, float cell_x, float c
 	outputmap << "\"mapversion\" \"220\"" << std::endl;
 	outputmap << "\"startdark\" \"0\"" << std::endl;
 	if (!one_Light_found)
+	{
 		outputmap << "\"light\" \"1\"" << std::endl;
-	outputmap << "\"_minlight\" \"0.5\"" << std::endl;
+		outputmap << "\"_minlight\" \"0.5\"" << std::endl;
+	}
 	outputmap << "\"MaxRange\" \"8096\"" << std::endl;
 	outputmap << "\"sounds\" \"1\"" << std::endl;
 	outputmap << "\"wad\" \"/valve/halflife.wad\"" << std::endl;
@@ -777,18 +779,22 @@ void DrawUnrealGUI()
 							for (int y = 0; y < atoi(cell_y); y++)
 							{
 								char tmplbl[64];
-								snprintf(tmplbl, sizeof(tmplbl), "%d\n%d##item%d", cell_list[cur_item].height, cell_list[cur_item].height_offset, cur_item);
+								if (cell_list[cur_item].type == cell_type::cell_light ||
+									cell_list[cur_item].type == cell_type::cell_hostage ||
+									cell_list[cur_item].type == cell_type::cell_player_CT ||
+									cell_list[cur_item].type == cell_type::cell_player_TT)
+									snprintf(tmplbl, sizeof(tmplbl), "##item%d", cur_item);
+								else 
+									snprintf(tmplbl, sizeof(tmplbl), "%d\n%d##item%d", cell_list[cur_item].height, cell_list[cur_item].height_offset, cur_item);
+
 								ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(2.0f, 2.0f));
 								ImGui::PushStyleColor(ImGuiCol_Button, get_cell_color(cur_item));
 
-								if (cell_list[cur_item].type == cell_type::cell_light)
-									ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 0, 0, 255));
-
 								ImGui::Button(tmplbl, ImVec2(30, 30));
+
 								ImGui::PopStyleVar();
-								if (cell_list[cur_item].type == cell_type::cell_light)
-									ImGui::PopStyleColor();
 								ImGui::PopStyleColor();
+
 								if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem))
 								{
 									if (ImGui::IsMouseDown(ImGuiMouseButton_Left))
@@ -907,7 +913,7 @@ int main(int, char**)
 #endif
 
 	// Create window with graphics context
-	GLFWwindow* window = glfwCreateWindow(1280, 720, "Unreal Map Draw Tool 1.0", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(1280, 720, "Unreal Map Draw Tool 1.1", NULL, NULL);
 	if (window == NULL)
 		return 1;
 	glfwMakeContextCurrent(window);
