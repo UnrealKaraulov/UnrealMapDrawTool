@@ -52,6 +52,7 @@ struct cell
 
 std::vector<cell> cell_list;
 
+
 ImVec4 get_cell_color(cell_type c_type)
 {
 	switch (c_type)
@@ -671,7 +672,7 @@ void DrawUnrealGUI()
 			snprintf(cur_cell_height, sizeof(cur_cell_height), "%d", (100 - atoi(cur_cell_height_offset)));
 		}
 
-		if (ImGui::Button("Fill current layer with selected."))
+		if (ImGui::Button("Fill current layer"))
 		{
 			fill_current_layer = true;
 		}
@@ -710,8 +711,6 @@ void DrawUnrealGUI()
 
 
 		ImGui::Separator();
-
-		ImGui::Dummy(ImVec2(0, 20));
 
 		if (ImGui::Button("Generate map!"))
 		{
