@@ -605,7 +605,7 @@ void DrawUnrealGUI()
 
 	if (setup_end)
 	{
-		ImGui::SetNextWindowPos(ImVec2(5.0f, 5.0f));
+		ImGui::SetNextWindowPos(ImVec2(5.0f, 5.0f), ImGuiCond_FirstUseEver);
 		ImGui::Begin("DRAW BAR", nullptr, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize);
 		ImGui::Text("Press left mouse to fill cell");
 		ImGui::Text("Press right mouse to clear cell");
@@ -740,6 +740,13 @@ void DrawUnrealGUI()
 			}
 		}
 
+
+		ImGui::SameLine();
+
+		if (ImGui::Button("Close map"))
+		{
+			setup_end = false;;
+		}
 
 		ImGui::End();
 		// ImGui::SetNextWindowPos(ImVec2(300.0, 50.0));
@@ -900,7 +907,7 @@ int main(int, char**)
 #endif
 
 	// Create window with graphics context
-	GLFWwindow* window = glfwCreateWindow(1280, 720, "Unreal Map Draw Tool", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(1280, 720, "Unreal Map Draw Tool 1.0", NULL, NULL);
 	if (window == NULL)
 		return 1;
 	glfwMakeContextCurrent(window);
