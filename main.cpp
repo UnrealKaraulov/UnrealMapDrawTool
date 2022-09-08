@@ -4,6 +4,7 @@
 // Read online: https://github.com/ocornut/imgui/tree/master/docs
 
 #include "imgui.h"
+#include "imgui_internal.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include <stdio.h>
@@ -397,7 +398,10 @@ void GenerateUnrealMap(float cell_size, float cell_height, float cell_x, float c
 								if (cur_cell.type == cell_type::cell_buyzone)
 									output_entities << "\"classname\" \"func_buyzone\"" << std::endl;
 								else if (cur_cell.type == cell_type::cell_waterzone)
+								{
 									output_entities << "\"classname\" \"func_water\"" << std::endl;
+									output_entities << "\"skin\" \"-3\"" << std::endl;
+								}
 								else
 									output_entities << "\"classname\" \"func_bomb_target\"" << std::endl;
 								output_entities <<
@@ -405,7 +409,7 @@ void GenerateUnrealMap(float cell_size, float cell_height, float cell_x, float c
 										GetMinZ_fromPercent(item_z_offset, cell_height, (float)cur_cell.height_offset),
 										item_x_offset + x * cell_size + cell_size * cur_item_x_multiple,
 										item_y_offset - (y * cell_size + cell_size * cur_item_y_multiple),
-										GetMaxZ_fromPercent(item_z_offset, cell_height, (float)cur_cell.height_offset, (float)cur_cell.height), cur_cell.type == cell_type::cell_waterzone ? "!WATERBLUE" : "AAATRIGGER");
+										GetMaxZ_fromPercent(item_z_offset, cell_height, (float)cur_cell.height_offset, (float)cur_cell.height), cur_cell.type == cell_type::cell_waterzone ? "!WATER2B" : "AAATRIGGER");
 								output_entities << std::endl;
 							}
 							output_entities << "}" << std::endl;
@@ -431,7 +435,7 @@ void GenerateUnrealMap(float cell_size, float cell_height, float cell_x, float c
 	}
 	outputmap << "\"MaxRange\" \"8096\"" << std::endl;
 	outputmap << "\"sounds\" \"1\"" << std::endl;
-	outputmap << "\"wad\" \"/valve/halflife.wad\"" << std::endl;
+	outputmap << "\"wad\" \"/valve/halflife.wad;/valve/liquids.wad\"" << std::endl;
 	outputmap << "\"_generator\" \"UnrealMapDrawTool\"" << std::endl;
 	outputmap << output_bruhes.str();
 	outputmap << "}" << std::endl;
@@ -474,6 +478,9 @@ char cur_cell_height_offset[256] = "0";
 bool fill_current_layer = false;
 bool clear_current_layer = false;
 
+float scroll_x = 0.0f;
+float scroll_y = 0.0f;
+int last_layer_opened = 0;
 
 int atoi_val;
 const char* atoint_static(const char* s)
@@ -559,7 +566,7 @@ void DrawUnrealGUI()
 
 		if (ImGui::Button("START NEW"))
 		{
-			cell tmpcell;
+			cell tmpcell = cell();
 			tmpcell.height = 0;
 			tmpcell.height_offset = 0;
 			tmpcell.type = cell_none;
@@ -583,7 +590,7 @@ void DrawUnrealGUI()
 		ImGui::SameLine();
 		if (ImGui::Button("LOAD LAST"))
 		{
-			int tmp_int_value;
+			int tmp_int_value = 0;
 			std::ifstream tmpmap("umdt.map.bin", std::ios::in | std::ios::binary);
 			if (tmpmap.is_open())
 			{
@@ -600,7 +607,7 @@ void DrawUnrealGUI()
 				tmpmap.read((char*)&tmp_int_value, 4);
 				snprintf(cell_layers, sizeof(cell_layers), "%d", tmp_int_value);
 
-				cell tmpcell;
+				cell tmpcell = cell();
 				tmpcell.height = 0;
 				tmpcell.height_offset = 0;
 				tmpcell.type = cell_none;
@@ -688,6 +695,11 @@ void DrawUnrealGUI()
 			snprintf(cur_cell_height, sizeof(cur_cell_height), "%d", (100 - atoi(cur_cell_height_offset)));
 		}
 
+		if (c_type == cell_type::cell_waterzone && atoi(cur_cell_height) == 100 && atoi(cur_cell_height_offset) == 0)
+		{
+			snprintf(cur_cell_height, sizeof(cur_cell_height), "%d", 99);
+		}
+
 		ImGui::Checkbox("Sky borders", &UseSkyBorders);
 
 		if (ImGui::Button("Fill current layer"))
@@ -699,7 +711,7 @@ void DrawUnrealGUI()
 
 		if (ImGui::Button("Clear map"))
 		{
-			cell tmpcell;
+			cell tmpcell = cell();
 			tmpcell.height = 0;
 			tmpcell.height_offset = 0;
 			tmpcell.type = cell_none;
@@ -795,8 +807,11 @@ void DrawUnrealGUI()
 
 		cur_item = 0;
 
+		int cur_bar = 0;
+
 		for (int lvl = 0; lvl < atoi(cell_levels); lvl++)
 		{
+			cur_bar++;
 			char levelname[64];
 			snprintf(levelname, sizeof(levelname), "Level %d", lvl + 1);
 			ImGui::SetNextItemWidth(100);
@@ -806,16 +821,35 @@ void DrawUnrealGUI()
 				ImGui::BeginTabBar("##text11", ImGuiTabBarFlags_FittingPolicyScroll);
 				for (int layer = 0; layer < atoi(cell_layers); layer++)
 				{
+					cur_bar++;
 					snprintf(levelname, sizeof(levelname), "Layer %d", lvl + layer);
 					if (ImGui::BeginTabItem(levelname))
 					{
 						snprintf(levelname, sizeof(levelname), "##level%d", lvl + 1);
 						ImGui::BeginChild(levelname, ImVec2(0, 0), true, ImGuiWindowFlags_AlwaysVerticalScrollbar
 							| ImGuiWindowFlags_AlwaysHorizontalScrollbar);
+
+
+						ImGuiWindow* window = ImGui::GetCurrentWindow();
+						ImGuiID active_id = ImGui::GetActiveID();
+						bool any_scrollbar_active = active_id && (active_id == ImGui::GetWindowScrollbarID(window, ImGuiAxis_X) || active_id == ImGui::GetWindowScrollbarID(window, ImGuiAxis_Y));
+
+						if (any_scrollbar_active)
+						{
+							scroll_x = ImGui::GetScrollX();
+							scroll_y = ImGui::GetScrollY();
+						}
+						else
+						{
+							ImGui::SetScrollX(scroll_x);
+							ImGui::SetScrollY(scroll_y);
+						}
+
 						for (int x = 0; x < atoi(cell_x); x++)
 						{
 							for (int y = 0; y < atoi(cell_y); y++)
 							{
+
 								char tmplbl[64];
 								if (cell_list[cur_item].type == cell_type::cell_light ||
 									cell_list[cur_item].type == cell_type::cell_hostage ||
@@ -832,8 +866,7 @@ void DrawUnrealGUI()
 
 								ImGui::PopStyleVar();
 								ImGui::PopStyleColor();
-
-								if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem))
+								if (!any_scrollbar_active && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem))
 								{
 									ImGui::BeginTooltip();
 									ImGui::Text("Type: %s", items[cell_list[cur_item].type]);
@@ -896,6 +929,7 @@ void DrawUnrealGUI()
 						}
 						clear_current_layer = false;
 						fill_current_layer = false;
+
 						ImGui::EndChild();
 						ImGui::EndTabItem();
 					}
@@ -967,7 +1001,7 @@ int main(int, char**)
 #endif
 
 	// Create window with graphics context
-	GLFWwindow* window = glfwCreateWindow(960, 620, "Unreal Map Draw Tool 1.4", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(960, 620, "Unreal Map Draw Tool 1.5", NULL, NULL);
 	if (window == NULL)
 		return 1;
 	glfwMakeContextCurrent(window);
@@ -1004,7 +1038,6 @@ int main(int, char**)
 		ImGui::NewFrame();
 
 		DrawUnrealGUI();
-
 
 		// Rendering
 		ImGui::Render();
