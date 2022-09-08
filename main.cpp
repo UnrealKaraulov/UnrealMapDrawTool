@@ -478,6 +478,7 @@ void DrawUnrealGUI()
 
 	if (!setup_end)
 	{
+		ImGui::SetNextWindowPos(ImVec2(350.0f, 150.0f), ImGuiCond_FirstUseEver);
 		ImGui::Begin("Setup", nullptr, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize);
 
 		ImGui::Text("Cell X count");
@@ -764,10 +765,10 @@ void DrawUnrealGUI()
 		}
 
 		ImGui::End();
-		// ImGui::SetNextWindowPos(ImVec2(300.0, 50.0));
+		ImGui::SetNextWindowPos(ImVec2(350.0, 5.0), ImGuiCond_::ImGuiCond_FirstUseEver);
 		ImGui::SetNextWindowSize(ImVec2(600.0, 400.0), ImGuiCond_::ImGuiCond_FirstUseEver);
-		ImGui::Begin("DRAW MAP", nullptr, ImGuiWindowFlags_AlwaysVerticalScrollbar
-			| ImGuiWindowFlags_AlwaysHorizontalScrollbar);
+		ImGui::Begin("DRAW MAP", nullptr/*, ImGuiWindowFlags_AlwaysVerticalScrollbar
+			| ImGuiWindowFlags_AlwaysHorizontalScrollbar*/);
 
 		ImGui::BeginTabBar("##text10", ImGuiTabBarFlags_FittingPolicyScroll);
 
@@ -787,6 +788,9 @@ void DrawUnrealGUI()
 					snprintf(levelname, sizeof(levelname), "Layer %d", lvl + layer);
 					if (ImGui::BeginTabItem(levelname))
 					{
+						snprintf(levelname, sizeof(levelname), "##level%d", lvl + 1);
+						ImGui::BeginChild(levelname, ImVec2(0, 0), true, ImGuiWindowFlags_AlwaysVerticalScrollbar
+							| ImGuiWindowFlags_AlwaysHorizontalScrollbar);
 						for (int x = 0; x < atoi(cell_x); x++)
 						{
 							for (int y = 0; y < atoi(cell_y); y++)
@@ -870,6 +874,7 @@ void DrawUnrealGUI()
 						}
 						clear_current_layer = false;
 						fill_current_layer = false;
+						ImGui::EndChild();
 						ImGui::EndTabItem();
 					}
 					else
@@ -940,7 +945,7 @@ int main(int, char**)
 #endif
 
 	// Create window with graphics context
-	GLFWwindow* window = glfwCreateWindow(1280, 720, "Unreal Map Draw Tool 1.2", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(960, 620, "Unreal Map Draw Tool 1.3", NULL, NULL);
 	if (window == NULL)
 		return 1;
 	glfwMakeContextCurrent(window);
