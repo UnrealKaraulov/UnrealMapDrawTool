@@ -40,7 +40,8 @@ enum cell_type :unsigned char
 	cell_player_CT,
 	cell_light,
 	cell_buyzone,
-	cell_bombzone
+	cell_bombzone,
+	cell_waterzone
 };
 
 struct cell
@@ -70,9 +71,11 @@ ImVec4 get_cell_color(cell_type c_type)
 	case cell_light:
 		return ImVec4{ 1.0f, 1.0f, 1.0f, 1.0f };
 	case cell_buyzone:
-		return ImVec4{ 0.0f, 1.0f, 1.0f, 1.0f };
+		return ImVec4{ 0.0f, 0.75f, 0.75f, 1.0f };
 	case cell_bombzone:
 		return ImVec4{ 1.0f, 0.5f, 0.0f, 1.0f };
+	case cell_waterzone:
+		return ImVec4{ 0.2f, 0.6f, 1.0f, 1.0f };
 	default:
 		break;
 	}
@@ -134,6 +137,7 @@ float GetHeightOffset_fromPercent(float cell_height, float z_offset)
 	return cell_height / 100.0f * z_offset;
 }
 
+bool UseSkyBorders = false;
 
 
 void GenerateUnrealMap(float cell_size, float cell_height, float cell_x, float cell_y, int cell_levels, int cell_layers)
@@ -199,7 +203,7 @@ void GenerateUnrealMap(float cell_size, float cell_height, float cell_x, float c
 			item_z_offset - cell_size,
 			-item_x_offset,
 			-item_y_offset,
-			item_z_offset, "TNNL_FLR7");
+			item_z_offset, "CRETE4_FLR02");
 	output_bruhes << std::endl;
 
 
@@ -208,7 +212,7 @@ void GenerateUnrealMap(float cell_size, float cell_height, float cell_x, float c
 			-item_z_offset,
 			-item_x_offset,
 			-item_y_offset,
-			-item_z_offset + cell_size, "TNNL_FLR7");
+			-item_z_offset + cell_size, UseSkyBorders ? "SKY" : "CRETE4_WALL01C");
 	output_bruhes << std::endl;
 
 
@@ -218,7 +222,7 @@ void GenerateUnrealMap(float cell_size, float cell_height, float cell_x, float c
 			item_z_offset - cell_size,
 			item_x_offset,
 			-item_y_offset,
-			-item_z_offset + cell_size, "TNNL_FLR7");
+			-item_z_offset + cell_size, UseSkyBorders ? "SKY" : "CRETE4_WALL01C");
 	output_bruhes << std::endl;
 
 	output_bruhes <<
@@ -226,7 +230,7 @@ void GenerateUnrealMap(float cell_size, float cell_height, float cell_x, float c
 			item_z_offset - cell_size,
 			-item_x_offset + cell_size,
 			-item_y_offset,
-			-item_z_offset + cell_size, "TNNL_FLR7");
+			-item_z_offset + cell_size, UseSkyBorders ? "SKY" : "CRETE4_WALL01C");
 	output_bruhes << std::endl;
 
 
@@ -235,7 +239,7 @@ void GenerateUnrealMap(float cell_size, float cell_height, float cell_x, float c
 			item_z_offset - cell_size,
 			-item_x_offset + cell_size,
 			item_y_offset,
-			-item_z_offset + cell_size, "TNNL_FLR7");
+			-item_z_offset + cell_size, UseSkyBorders ? "SKY" : "CRETE4_WALL01C");
 	output_bruhes << std::endl;
 
 
@@ -245,7 +249,7 @@ void GenerateUnrealMap(float cell_size, float cell_height, float cell_x, float c
 			item_z_offset - cell_size,
 			-item_x_offset + cell_size,
 			-item_y_offset - cell_size,
-			-item_z_offset + cell_size, "TNNL_FLR7");
+			-item_z_offset + cell_size, UseSkyBorders ? "SKY" : "CRETE4_WALL01C");
 	output_bruhes << std::endl;
 
 
@@ -282,7 +286,8 @@ void GenerateUnrealMap(float cell_size, float cell_height, float cell_x, float c
 								if (!ignore_other && next_cell.type == cur_cell.type &&
 									next_cell.height == cur_cell.height &&
 									next_cell.height_offset == cur_cell.height_offset && (cur_cell.type == cell_type::cell_bombzone
-										|| cur_cell.type == cell_type::cell_buyzone || cur_cell.type == cell_type::cell_brush))
+										|| cur_cell.type == cell_type::cell_buyzone || cur_cell.type == cell_type::cell_brush
+										|| cur_cell.type == cell_type::cell_waterzone))
 								{
 									cur_item_x_multiple++;
 									cell_list[tmp_item].height = 0;
@@ -316,7 +321,8 @@ void GenerateUnrealMap(float cell_size, float cell_height, float cell_x, float c
 								if (tmp_x_multiple < cur_item_x_multiple && !ignore_other && next_cell.type == cur_cell.type &&
 									next_cell.height == cur_cell.height &&
 									next_cell.height_offset == cur_cell.height_offset && (cur_cell.type == cell_type::cell_bombzone
-										|| cur_cell.type == cell_type::cell_buyzone || cur_cell.type == cell_type::cell_brush))
+										|| cur_cell.type == cell_type::cell_buyzone || cur_cell.type == cell_type::cell_brush
+										|| cur_cell.type == cell_type::cell_waterzone))
 								{
 									tmp_x_multiple++;
 									items_for_erase.push_back(tmp_item);
@@ -385,18 +391,21 @@ void GenerateUnrealMap(float cell_size, float cell_height, float cell_x, float c
 									GetMinZ_fromPercent(item_z_offset, cell_height, (float)cur_cell.height_offset) + cell_height / 2.0f);
 								output_entities << std::endl;
 							}
-							else if (cur_cell.type == cell_type::cell_buyzone || cur_cell.type == cell_type::cell_bombzone)
+							else if (cur_cell.type == cell_type::cell_buyzone || cur_cell.type == cell_type::cell_bombzone
+								|| cur_cell.type == cell_type::cell_waterzone)
 							{
 								if (cur_cell.type == cell_type::cell_buyzone)
 									output_entities << "\"classname\" \"func_buyzone\"" << std::endl;
+								else if (cur_cell.type == cell_type::cell_waterzone)
+									output_entities << "\"classname\" \"func_water\"" << std::endl;
 								else
 									output_entities << "\"classname\" \"func_bomb_target\"" << std::endl;
 								output_entities <<
 									GenerateCuboid(item_x_offset + x * cell_size, item_y_offset - y * cell_size,
 										GetMinZ_fromPercent(item_z_offset, cell_height, (float)cur_cell.height_offset),
 										item_x_offset + x * cell_size + cell_size * cur_item_x_multiple,
-										item_y_offset - (y * cell_size + cell_size * cur_item_y_multiple), 
-										GetMaxZ_fromPercent(item_z_offset, cell_height, (float)cur_cell.height_offset, (float)cur_cell.height));
+										item_y_offset - (y * cell_size + cell_size * cur_item_y_multiple),
+										GetMaxZ_fromPercent(item_z_offset, cell_height, (float)cur_cell.height_offset, (float)cur_cell.height), cur_cell.type == cell_type::cell_waterzone ? "!WATERBLUE" : "AAATRIGGER");
 								output_entities << std::endl;
 							}
 							output_entities << "}" << std::endl;
@@ -453,9 +462,9 @@ char cell_layers[256] = "3";
 
 bool setup_end = false;
 
-const char* items[] = { "NONE", "BRUSH", "HOSTAGE", "TERRORIST", "COUNTER-TERRORIST", "LIGHT", "BUYZONE BRUSH", "BOMBZONE BRUSH" };
+const char* items[] = { "NONE", "BRUSH", "HOSTAGE", "TERRORIST", "COUNTER-TERRORIST", "LIGHT", "BUYZONE BRUSH", "BOMBZONE BRUSH", "WATER BRUSH" };
 cell_type items_types[] = { cell_type::cell_none, cell_type::cell_brush, cell_type::cell_hostage, cell_type::cell_player_TT, cell_type::cell_player_CT,
-		cell_type::cell_light, cell_type::cell_buyzone, cell_type::cell_bombzone };
+		cell_type::cell_light, cell_type::cell_buyzone, cell_type::cell_bombzone, cell_type::cell_waterzone };
 
 
 const char* current_item = "NONE";
@@ -613,6 +622,13 @@ void DrawUnrealGUI()
 						}
 					}
 				}
+
+
+				int skybool = UseSkyBorders ? 1 : 0;
+				tmpmap.read((char*)&skybool, 4);
+
+				UseSkyBorders = skybool != 0;
+
 				setup_end = true;
 				tmpmap.close();
 			}
@@ -667,11 +683,12 @@ void DrawUnrealGUI()
 			snprintf(cur_cell_height_offset, sizeof(cur_cell_height_offset), "%d", 99);
 		}
 
-
 		if (atoi(cur_cell_height) > 100 - atoi(cur_cell_height_offset))
 		{
 			snprintf(cur_cell_height, sizeof(cur_cell_height), "%d", (100 - atoi(cur_cell_height_offset)));
 		}
+
+		ImGui::Checkbox("Sky borders", &UseSkyBorders);
 
 		if (ImGui::Button("Fill current layer"))
 		{
@@ -752,6 +769,10 @@ void DrawUnrealGUI()
 						}
 					}
 				}
+
+				int skybool = UseSkyBorders ? 1 : 0;
+				tmpmap.write((const char*)&skybool, 4);
+
 				tmpmap.close();
 			}
 		}
@@ -801,7 +822,7 @@ void DrawUnrealGUI()
 									cell_list[cur_item].type == cell_type::cell_player_CT ||
 									cell_list[cur_item].type == cell_type::cell_player_TT)
 									snprintf(tmplbl, sizeof(tmplbl), "##item%d", cur_item);
-								else 
+								else
 									snprintf(tmplbl, sizeof(tmplbl), "%d\n%d##item%d", cell_list[cur_item].height, cell_list[cur_item].height_offset, cur_item);
 
 								ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(2.0f, 2.0f));
@@ -820,7 +841,8 @@ void DrawUnrealGUI()
 									ImGui::Text("Size %d units", atoi(cell_size));
 									if (cell_list[cur_item].type == cell_type::cell_brush
 										|| cell_list[cur_item].type == cell_type::cell_buyzone
-										|| cell_list[cur_item].type == cell_type::cell_bombzone)
+										|| cell_list[cur_item].type == cell_type::cell_bombzone
+										|| cell_list[cur_item].type == cell_type::cell_waterzone)
 									{
 										ImGui::Text("Height %d units", (int)GetHeight_fromPercent((float)atoi(cell_height), cell_list[cur_item].height));
 										ImGui::Text("Height start %d units", (int)GetHeightOffset_fromPercent((float)atoi(cell_height), cell_list[cur_item].height_offset));
@@ -945,7 +967,7 @@ int main(int, char**)
 #endif
 
 	// Create window with graphics context
-	GLFWwindow* window = glfwCreateWindow(960, 620, "Unreal Map Draw Tool 1.3", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(960, 620, "Unreal Map Draw Tool 1.4", NULL, NULL);
 	if (window == NULL)
 		return 1;
 	glfwMakeContextCurrent(window);
