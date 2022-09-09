@@ -807,11 +807,10 @@ void DrawUnrealGUI()
 
 		cur_item = 0;
 
-		int cur_bar = 0;
+		static ImGuiWindow* cur_bar = nullptr;
 
 		for (int lvl = 0; lvl < atoi(cell_levels); lvl++)
 		{
-			cur_bar++;
 			char levelname[64];
 			snprintf(levelname, sizeof(levelname), "Level %d", lvl + 1);
 			ImGui::SetNextItemWidth(100);
@@ -821,7 +820,6 @@ void DrawUnrealGUI()
 				ImGui::BeginTabBar("##text11", ImGuiTabBarFlags_FittingPolicyScroll);
 				for (int layer = 0; layer < atoi(cell_layers); layer++)
 				{
-					cur_bar++;
 					snprintf(levelname, sizeof(levelname), "Layer %d", lvl + layer);
 					if (ImGui::BeginTabItem(levelname))
 					{
@@ -834,7 +832,7 @@ void DrawUnrealGUI()
 						ImGuiID active_id = ImGui::GetActiveID();
 						bool any_scrollbar_active = active_id && (active_id == ImGui::GetWindowScrollbarID(window, ImGuiAxis_X) || active_id == ImGui::GetWindowScrollbarID(window, ImGuiAxis_Y));
 
-						if (any_scrollbar_active)
+						if (cur_bar == nullptr || cur_bar == window)
 						{
 							scroll_x = ImGui::GetScrollX();
 							scroll_y = ImGui::GetScrollY();
@@ -844,6 +842,7 @@ void DrawUnrealGUI()
 							ImGui::SetScrollX(scroll_x);
 							ImGui::SetScrollY(scroll_y);
 						}
+						cur_bar = window;
 
 						for (int x = 0; x < atoi(cell_x); x++)
 						{
@@ -870,7 +869,7 @@ void DrawUnrealGUI()
 								{
 									ImGui::BeginTooltip();
 									ImGui::Text("Type: %s", items[cell_list[cur_item].type]);
-									ImGui::Text("Pos %d/%d", y + 1, x + 1);
+									ImGui::Text("Pos %d/%d(%d/%d)", y + 1, x + 1, (y + 1) * atoi(cell_size), (x + 1) * atoi(cell_size));
 									ImGui::Text("Size %d units", atoi(cell_size));
 									if (cell_list[cur_item].type == cell_type::cell_brush
 										|| cell_list[cur_item].type == cell_type::cell_buyzone
@@ -929,7 +928,6 @@ void DrawUnrealGUI()
 						}
 						clear_current_layer = false;
 						fill_current_layer = false;
-
 						ImGui::EndChild();
 						ImGui::EndTabItem();
 					}
@@ -1001,7 +999,7 @@ int main(int, char**)
 #endif
 
 	// Create window with graphics context
-	GLFWwindow* window = glfwCreateWindow(960, 620, "Unreal Map Draw Tool 1.5", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(960, 620, "Unreal Map Draw Tool 1.6", NULL, NULL);
 	if (window == NULL)
 		return 1;
 	glfwMakeContextCurrent(window);

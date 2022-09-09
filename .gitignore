@@ -38,3 +38,4 @@ UMDT.map
 x64/Release/UMDT.map
 *.ipch
 *.cmd
+*.recipe
