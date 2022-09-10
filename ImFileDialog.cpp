@@ -337,9 +337,7 @@ namespace ifd {
 		IsDirectory = std::filesystem::is_directory(path, ec);
 		Size = std::filesystem::file_size(path, ec);
 
-		struct stat attr;
-		stat(path.string().c_str(), &attr);
-		DateModified = attr.st_ctime;
+		DateModified = std::filesystem::last_write_time(path).time_since_epoch().count();
 
 		HasIconPreview = false;
 		IconPreview = nullptr;
@@ -573,36 +571,44 @@ namespace ifd {
 	
 	void FileDialog::m_select(const std::filesystem::path& path, bool isCtrlDown)
 	{
-		bool multiselect = isCtrlDown && m_isMultiselect;
+		try
+		{
+			bool multiselect = isCtrlDown && m_isMultiselect;
 
-		if (!multiselect) {
-			m_selections.clear();
-			m_selections.push_back(path);
-		} else {
-			auto it = std::find(m_selections.begin(), m_selections.end(), path);
-			if (it != m_selections.end())
-				m_selections.erase(it);
-			else
+			if (!multiselect) {
+				m_selections.clear();
 				m_selections.push_back(path);
-		}
-
-		if (m_selections.size() == 1) {
-			std::string filename = m_selections[0].filename().string();
-			if (filename.size() == 0)
-				filename = m_selections[0].string(); // drive
-
-			strcpy(m_inputTextbox, filename.c_str());
-		}
-		else {
-			std::string textboxVal = "";
-			for (const auto& sel : m_selections) {
-				std::string filename = sel.filename().string();
-				if (filename.size() == 0)
-					filename = sel.string();
-
-				textboxVal += "\"" + filename + "\", ";
 			}
-			strcpy(m_inputTextbox, textboxVal.substr(0, textboxVal.size() - 2).c_str());
+			else {
+				auto it = std::find(m_selections.begin(), m_selections.end(), path);
+				if (it != m_selections.end())
+					m_selections.erase(it);
+				else
+					m_selections.push_back(path);
+			}
+
+			if (m_selections.size() == 1) {
+				std::string filename = m_selections[0].filename().string();
+				if (filename.size() == 0)
+					filename = m_selections[0].string(); // drive
+
+				strcpy(m_inputTextbox, filename.c_str());
+			}
+			else {
+				std::string textboxVal = "";
+				for (const auto& sel : m_selections) {
+					std::string filename = sel.filename().string();
+					if (filename.size() == 0)
+						filename = sel.string();
+
+					textboxVal += "\"" + filename + "\", ";
+				}
+				strcpy(m_inputTextbox, textboxVal.substr(0, textboxVal.size() - 2).c_str());
+			}
+		}
+		catch (...)
+		{
+
 		}
 	}
 
@@ -705,9 +711,15 @@ namespace ifd {
 	void* FileDialog::m_getIcon(const std::filesystem::path& path)
 	{
 #ifdef _WIN32
-		if (m_icons.count(path.string()) > 0)
-			return m_icons[path.string()];
-
+		try
+		{
+			if (m_icons.count(path.string()) > 0)
+				return m_icons[path.string()];
+		}
+		catch (...)
+		{
+			return nullptr;
+		}
 		std::string pathU8 = path.string();
 
 		std::error_code ec;
@@ -1020,17 +1032,24 @@ namespace ifd {
 			auto compareFn = [column, sortDirection](const FileData& left, const FileData& right) -> bool {
 				// name
 				if (column == 0) {
-					std::string lName = left.Path.string();
-					std::string rName = right.Path.string();
+					try
+					{
+						std::string lName = left.Path.string();
+						std::string rName = right.Path.string();
 
-					std::transform(lName.begin(), lName.end(), lName.begin(), ::tolower);
-					std::transform(rName.begin(), rName.end(), rName.begin(), ::tolower);
+						std::transform(lName.begin(), lName.end(), lName.begin(), ::tolower);
+						std::transform(rName.begin(), rName.end(), rName.begin(), ::tolower);
 
-					int comp = lName.compare(rName);
+						int comp = lName.compare(rName);
 
-					if (sortDirection == ImGuiSortDirection_Ascending)
-						return comp < 0;
-					return comp > 0;
+						if (sortDirection == ImGuiSortDirection_Ascending)
+							return comp < 0;
+						return comp > 0;
+					}
+					catch (...)
+					{
+						return false;
+					}
 				}
 				// date
 				else if (column == 1) {
@@ -1114,7 +1133,16 @@ namespace ifd {
 				// content
 				int fileId = 0;
 				for (auto& entry : m_content) {
-					std::string filename = entry.Path.filename().string();
+
+					std::string filename = "????????";
+					try
+					{
+						filename = entry.Path.filename().string();
+					}
+					catch(...)
+					{
+
+					}
 					if (filename.size() == 0)
 						filename = entry.Path.string(); // drive
 					

@@ -11,12 +11,7 @@
 #include <sstream>
 #include <fstream>
 
-
-
 #include "font.h"
-
-
-
 #include "glew.h"
 
 #include "GLFW/glfw3.h"
@@ -1062,6 +1057,8 @@ int main(int, char**)
 	io.Fonts->AddFontDefault();
 
 	io.Fonts->AddFontFromMemoryCompressedTTF((const char*)compressed_data, compressed_size, 14.0, &config, io.Fonts->GetGlyphRangesCyrillic());
+
+	io.Fonts->AddFontFromMemoryCompressedTTF((const char*)compressed_data, compressed_size, 14.0, &config, io.Fonts->GetGlyphRangesJapanese());
 
 	io.Fonts->AddFontFromMemoryCompressedTTF((const char*)compressed_data, compressed_size, 14.0, &config);
 	io.Fonts->Build();
