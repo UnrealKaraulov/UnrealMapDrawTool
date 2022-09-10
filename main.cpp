@@ -19,7 +19,7 @@
 
 #include "glew.h"
 
-#include "GLFW/glfw3.h" // Will drag system OpenGL headers
+#include "GLFW/glfw3.h"
 
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -28,14 +28,6 @@
 #include "imstb_truetype.h"
 #include "ImFileDialog.h"
 
-#include <Windows.h>
-
-#if defined(IMGUI_IMPL_OPENGL_ES2)
-#include <GLES2/gl2.h>
-#endif
-// [Win32] Our example includes a copy of glfw3.lib pre-compiled with VS2010 to maximize ease of testing and compatibility with old VS compilers.
-// To link with VS2010-era libraries, VS2015+ requires linking with legacy_stdio_definitions.lib, which we do using this pragma.
-// Your own project should not be affected, as you are likely to link with a newer binary of GLFW that is adequate for your version of Visual Studio.
 #if defined(_MSC_VER) && (_MSC_VER >= 1900) && !defined(IMGUI_DISABLE_WIN32_FUNCTIONS)
 #pragma comment(lib, "legacy_stdio_definitions")
 #endif
@@ -154,7 +146,7 @@ float GetHeightOffset_fromPercent(float cell_height, float z_offset)
 bool UseSkyBorders = false;
 
 
-void GenerateUnrealMap(float cell_size, float cell_height, float cell_x, float cell_y, int cell_levels, int cell_layers)
+void GenerateUnrealMap(std::string fpath, float cell_size, float cell_height, float cell_x, float cell_y, int cell_levels, int cell_layers)
 {
 	int cur_item = 0;
 
@@ -455,7 +447,7 @@ void GenerateUnrealMap(float cell_size, float cell_height, float cell_x, float c
 	outputmap << output_entities.str();
 
 	std::ofstream outFile;
-	outFile.open("UMDT.map", std::ios::out);
+	outFile.open(fpath, std::ios::out);
 	if (outFile.is_open())
 	{
 		outFile << outputmap.rdbuf();
@@ -767,17 +759,25 @@ void DrawUnrealGUI()
 
 		ImGui::Separator();
 
+		if (ifd::FileDialog::Instance().IsDone("MapGenDialog")) {
+			if (ifd::FileDialog::Instance().HasResult()) {
+				std::filesystem::path res = ifd::FileDialog::Instance().GetResult();
+				std::vector<cell> tmp_cell_list = cell_list;
+				GenerateUnrealMap(res.string(),(float)atof(cell_size), (float)atof(cell_height), (float)atof(cell_x), (float)atof(cell_y), atoi(cell_levels), atoi(cell_layers));
+				cell_list = tmp_cell_list;
+			}
+			ifd::FileDialog::Instance().Close();
+		}
+
 		if (ImGui::Button("Generate map!"))
 		{
-			std::vector<cell> tmp_cell_list = cell_list;
-			GenerateUnrealMap((float)atof(cell_size), (float)atof(cell_height), (float)atof(cell_x), (float)atof(cell_y), atoi(cell_levels), atoi(cell_layers));
-			cell_list = tmp_cell_list;
+			ifd::FileDialog::Instance().Save("MapGenDialog", "Generate .map file", "Map file (*.map){.map},.*", tmpMapPath);
 		}
 		ImGui::SameLine();
 
 
 		int cur_item = 0;
-		if (ifd::FileDialog::Instance().IsDone("MapOpenDialog")) {
+		if (ifd::FileDialog::Instance().IsDone("MapSaveDialog")) {
 			if (ifd::FileDialog::Instance().HasResult()) {
 				std::filesystem::path res = ifd::FileDialog::Instance().GetResult();
 				std::ofstream tmpmap(res.string(), std::ios::out | std::ios::binary);
@@ -820,7 +820,7 @@ void DrawUnrealGUI()
 
 		if (ImGui::Button("Save map!"))
 		{
-			ifd::FileDialog::Instance().Save("MapOpenDialog", "Save a map", "Map file (*.umd){.umd},.*", tmpMapPath);
+			ifd::FileDialog::Instance().Save("MapSaveDialog", "Save a map", "Map file (*.umd){.umd},.*", tmpMapPath);
 		}
 
 
@@ -1090,11 +1090,6 @@ int main(int, char**)
 	// Main loop
 	while (!glfwWindowShouldClose(window))
 	{
-		// Poll and handle events (inputs, window resize, etc.)
-		// You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
-		// - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application, or clear/overwrite your copy of the mouse data.
-		// - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application, or clear/overwrite your copy of the keyboard data.
-		// Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
 		glfwPollEvents();
 
 		// Start the Dear ImGui frame
