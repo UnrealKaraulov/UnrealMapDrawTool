@@ -331,13 +331,22 @@ namespace ifd {
 		return ret;
 	}
 
+	template <typename TP>
+	std::time_t to_time_t(TP tp)
+	{
+		using namespace std::chrono;
+		auto sctp = time_point_cast<system_clock::duration>(tp - TP::clock::now()
+			+ system_clock::now());
+		return system_clock::to_time_t(sctp);
+	}
+
 	FileDialog::FileData::FileData(const std::filesystem::path& path) {
 		std::error_code ec;
 		Path = path;
 		IsDirectory = std::filesystem::is_directory(path, ec);
 		Size = (size_t)std::filesystem::file_size(path, ec);
 
-		DateModified = std::filesystem::last_write_time(path).time_since_epoch().count();
+		DateModified = to_time_t(std::filesystem::last_write_time(path));
 
 		HasIconPreview = false;
 		IconPreview = nullptr;
