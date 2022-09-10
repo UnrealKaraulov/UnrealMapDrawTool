@@ -335,7 +335,7 @@ namespace ifd {
 		std::error_code ec;
 		Path = path;
 		IsDirectory = std::filesystem::is_directory(path, ec);
-		Size = std::filesystem::file_size(path, ec);
+		Size = (size_t)std::filesystem::file_size(path, ec);
 
 		DateModified = std::filesystem::last_write_time(path).time_since_epoch().count();
 
@@ -734,7 +734,7 @@ namespace ifd {
 
 		SHFILEINFOW fileInfo = { 0 };
 		std::wstring pathW = path.wstring();
-		for (int i = 0; i < pathW.size(); i++)
+		for (unsigned int i = 0; i < pathW.size(); i++)
 			if (pathW[i] == '/')
 				pathW[i] = '\\';
 		SHGetFileInfoW(pathW.c_str(), attrs, &fileInfo, sizeof(SHFILEINFOW), flags);
