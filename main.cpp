@@ -775,43 +775,52 @@ void DrawUnrealGUI()
 		}
 		ImGui::SameLine();
 
-		int cur_item = 0;
-		if (ImGui::Button("Save map!"))
-		{
-			std::ofstream tmpmap("umdt.map.bin", std::ios::out | std::ios::binary);
-			if (tmpmap.is_open())
-			{
-				tmpmap.write((const char*)atoint_static(cell_x), 4);
-				tmpmap.write((const char*)atoint_static(cell_y), 4);
-				tmpmap.write((const char*)atoint_static(cell_size), 4);
-				tmpmap.write((const char*)atoint_static(cell_height), 4);
-				tmpmap.write((const char*)atoint_static(cell_levels), 4);
-				tmpmap.write((const char*)atoint_static(cell_layers), 4);
 
-				for (int lvl = 0; lvl < atoi(cell_levels); lvl++)
+		int cur_item = 0;
+		if (ifd::FileDialog::Instance().IsDone("MapOpenDialog")) {
+			if (ifd::FileDialog::Instance().HasResult()) {
+				std::filesystem::path res = ifd::FileDialog::Instance().GetResult();
+				std::ofstream tmpmap(res.string(), std::ios::out | std::ios::binary);
+				if (tmpmap.is_open())
 				{
-					for (int layer = 0; layer < atoi(cell_layers); layer++)
+					tmpmap.write((const char*)atoint_static(cell_x), 4);
+					tmpmap.write((const char*)atoint_static(cell_y), 4);
+					tmpmap.write((const char*)atoint_static(cell_size), 4);
+					tmpmap.write((const char*)atoint_static(cell_height), 4);
+					tmpmap.write((const char*)atoint_static(cell_levels), 4);
+					tmpmap.write((const char*)atoint_static(cell_layers), 4);
+
+					for (int lvl = 0; lvl < atoi(cell_levels); lvl++)
 					{
-						for (int x = 0; x < atoi(cell_x); x++)
+						for (int layer = 0; layer < atoi(cell_layers); layer++)
 						{
-							for (int y = 0; y < atoi(cell_y); y++)
+							for (int x = 0; x < atoi(cell_x); x++)
 							{
-								cell tmpcell = cell_list[cur_item];
-								unsigned char tmpc_type = (unsigned char)tmpcell.type;
-								tmpmap.write((const char*)&tmpcell.height, 1);
-								tmpmap.write((const char*)&tmpcell.height_offset, 1);
-								tmpmap.write((const char*)&tmpc_type, 1);
-								cur_item++;
+								for (int y = 0; y < atoi(cell_y); y++)
+								{
+									cell tmpcell = cell_list[cur_item];
+									unsigned char tmpc_type = (unsigned char)tmpcell.type;
+									tmpmap.write((const char*)&tmpcell.height, 1);
+									tmpmap.write((const char*)&tmpcell.height_offset, 1);
+									tmpmap.write((const char*)&tmpc_type, 1);
+									cur_item++;
+								}
 							}
 						}
 					}
+
+					int skybool = UseSkyBorders ? 1 : 0;
+					tmpmap.write((const char*)&skybool, 4);
+
+					tmpmap.close();
 				}
-
-				int skybool = UseSkyBorders ? 1 : 0;
-				tmpmap.write((const char*)&skybool, 4);
-
-				tmpmap.close();
 			}
+			ifd::FileDialog::Instance().Close();
+		}
+
+		if (ImGui::Button("Save map!"))
+		{
+			ifd::FileDialog::Instance().Save("MapOpenDialog", "Save a map", "Map file (*.umd){.umd},.*", tmpMapPath);
 		}
 
 
