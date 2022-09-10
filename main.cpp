@@ -578,9 +578,9 @@ void DrawUnrealGUI()
 			{
 				for (int layer = 0; layer < atoi(cell_layers); layer++)
 				{
-					for (int x = 0; x < atoi(cell_x); x++)
+					for (int y = 0; y < atoi(cell_y); y++)
 					{
-						for (int y = 0; y < atoi(cell_y); y++)
+						for (int x = 0; x < atoi(cell_x); x++)
 						{
 							cell_list.push_back(tmpcell);
 						}
@@ -621,9 +621,9 @@ void DrawUnrealGUI()
 					{
 						for (int layer = 0; layer < atoi(cell_layers); layer++)
 						{
-							for (int x = 0; x < atoi(cell_x); x++)
+							for (int y = 0; y < atoi(cell_y); y++)
 							{
-								for (int y = 0; y < atoi(cell_y); y++)
+								for (int x = 0; x < atoi(cell_x); x++)
 								{
 									tmpmap.read((char*)&tmpcell.height, 1);
 									tmpmap.read((char*)&tmpcell.height_offset, 1);
@@ -733,9 +733,9 @@ void DrawUnrealGUI()
 			{
 				for (int layer = 0; layer < atoi(cell_layers); layer++)
 				{
-					for (int x = 0; x < atoi(cell_x); x++)
+					for (int y = 0; y < atoi(cell_y); y++)
 					{
-						for (int y = 0; y < atoi(cell_y); y++)
+						for (int x = 0; x < atoi(cell_x); x++)
 						{
 							cell_list.push_back(tmpcell);
 						}
@@ -758,7 +758,7 @@ void DrawUnrealGUI()
 			if (ifd::FileDialog::Instance().HasResult()) {
 				std::filesystem::path res = ifd::FileDialog::Instance().GetResult();
 				std::vector<cell> tmp_cell_list = cell_list;
-				GenerateUnrealMap(res.string(),(float)atof(cell_size), (float)atof(cell_height), (float)atof(cell_x), (float)atof(cell_y), atoi(cell_levels), atoi(cell_layers));
+				GenerateUnrealMap(res.string(), (float)atof(cell_size), (float)atof(cell_height), (float)atof(cell_x), (float)atof(cell_y), atoi(cell_levels), atoi(cell_layers));
 				cell_list = tmp_cell_list;
 			}
 			ifd::FileDialog::Instance().Close();
@@ -789,9 +789,9 @@ void DrawUnrealGUI()
 					{
 						for (int layer = 0; layer < atoi(cell_layers); layer++)
 						{
-							for (int x = 0; x < atoi(cell_x); x++)
+							for (int y = 0; y < atoi(cell_y); y++)
 							{
-								for (int y = 0; y < atoi(cell_y); y++)
+								for (int x = 0; x < atoi(cell_x); x++)
 								{
 									cell tmpcell = cell_list[cur_item];
 									unsigned char tmpc_type = (unsigned char)tmpcell.type;
@@ -873,11 +873,10 @@ void DrawUnrealGUI()
 						}
 						cur_bar = window;
 
-						for (int x = 0; x < atoi(cell_x); x++)
+						for (int y = 0; y < atoi(cell_y); y++)
 						{
-							for (int y = 0; y < atoi(cell_y); y++)
+							for (int x = 0; x < atoi(cell_x); x++)
 							{
-
 								char tmplbl[64];
 								if (cell_list[cur_item].type == cell_type::cell_light ||
 									cell_list[cur_item].type == cell_type::cell_hostage ||
@@ -947,7 +946,7 @@ void DrawUnrealGUI()
 									cell_list[cur_item].height_offset = 0;
 								}
 
-								if (y + 1 != atoi(cell_y))
+								if (x + 1 != atoi(cell_x))
 								{
 									ImGui::SameLine(0.0, 2.0f);
 								}
@@ -1028,7 +1027,7 @@ int main(int, char**)
 #endif
 
 	// Create window with graphics context
-	GLFWwindow* window = glfwCreateWindow(960, 620, "Unreal Map Draw Tool 1.6", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(960, 620, "Unreal Map Draw Tool 1.7", NULL, NULL);
 	if (window == NULL)
 		return 1;
 
@@ -1049,7 +1048,7 @@ int main(int, char**)
 	// Setup Platform/Renderer backends
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL3_Init(glsl_version);
-	
+
 	ImFontConfig config;
 	config.FontBuilderFlags = 1 << 9;
 	config.MergeMode = true;
@@ -1067,7 +1066,6 @@ int main(int, char**)
 
 	ifd::FileDialog::Instance().CreateTexture = [](uint8_t* data, int w, int h, char fmt) -> void* {
 		GLuint tex;
-
 		glGenTextures(1, &tex);
 		glBindTexture(GL_TEXTURE_2D, tex);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -1076,9 +1074,9 @@ int main(int, char**)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, (fmt == 0) ? GL_BGRA : GL_RGBA, GL_UNSIGNED_BYTE, data);
 		glBindTexture(GL_TEXTURE_2D, 0);
-
 		return (void*)tex;
 	};
+
 	ifd::FileDialog::Instance().DeleteTexture = [](void* tex) {
 		GLuint texID = (GLuint)((uintptr_t)tex);
 		glDeleteTextures(1, &texID);
@@ -1087,16 +1085,15 @@ int main(int, char**)
 	// Main loop
 	while (!glfwWindowShouldClose(window))
 	{
+		int display_w, display_h;
 		glfwPollEvents();
-
-		// Start the Dear ImGui frame
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
+
 		DrawUnrealGUI();
-		// Rendering
+
 		ImGui::Render();
-		int display_w, display_h;
 		glfwGetFramebufferSize(window, &display_w, &display_h);
 		glViewport(0, 0, display_w, display_h);
 		glClearColor(0, 0, 0, 1);
