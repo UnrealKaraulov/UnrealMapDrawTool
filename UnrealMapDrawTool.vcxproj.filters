@@ -16,6 +16,9 @@
     <Filter Include="GLFW">
       <UniqueIdentifier>{605e54d4-8abd-46c6-8d5c-de00ff169814}</UniqueIdentifier>
     </Filter>
+    <Filter Include="FILEDIALOG">
+      <UniqueIdentifier>{f9c1fbea-33ba-4e53-9afb-9c5edbdc5c76}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="imgui.cpp">
@@ -38,6 +41,9 @@
     </ClCompile>
     <ClCompile Include="imgui_impl_opengl3.cpp">
       <Filter>IMGUI_SRC</Filter>
+    </ClCompile>
+    <ClCompile Include="ImFileDialog.cpp">
+      <Filter>FILEDIALOG</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
   </ItemGroup>
@@ -74,6 +80,18 @@
     </ClInclude>
     <ClInclude Include="GLFW\glfw3native.h">
       <Filter>GLFW</Filter>
+    </ClInclude>
+    <ClInclude Include="ImFileDialog.h">
+      <Filter>FILEDIALOG</Filter>
+    </ClInclude>
+    <ClInclude Include="stb_image.h">
+      <Filter>FILEDIALOG</Filter>
+    </ClInclude>
+    <ClInclude Include="glew.h">
+      <Filter>IMGUI_HEADERS</Filter>
+    </ClInclude>
+    <ClInclude Include="font.h">
+      <Filter>IMGUI_HEADERS</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

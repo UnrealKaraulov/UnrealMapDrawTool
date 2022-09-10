@@ -2,17 +2,8 @@
 // (GLFW is a cross-platform general purpose library for handling windows, inputs, OpenGL/Vulkan/Metal graphics context creation, etc.)
 // If you are new to Dear ImGui, read documentation from the docs/ folder + read the top of imgui.cpp.
 // Read online: https://github.com/ocornut/imgui/tree/master/docs
-
-#include "imgui.h"
-#include "imgui_internal.h"
-#include "imgui_impl_glfw.h"
-#include "imgui_impl_opengl3.h"
+#define GLEW_STATIC
 #include <stdio.h>
-#if defined(IMGUI_IMPL_OPENGL_ES2)
-#include <GLES2/gl2.h>
-#endif
-
-#include "GLFW/glfw3.h" // Will drag system OpenGL headers
 
 #include <string>
 #include <vector>
@@ -20,6 +11,28 @@
 #include <sstream>
 #include <fstream>
 
+
+
+#include "font.h"
+
+
+
+#include "glew.h"
+
+#include "GLFW/glfw3.h" // Will drag system OpenGL headers
+
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
+#include "imgui_internal.h"
+#include "imstb_truetype.h"
+#include "ImFileDialog.h"
+
+#include <Windows.h>
+
+#if defined(IMGUI_IMPL_OPENGL_ES2)
+#include <GLES2/gl2.h>
+#endif
 // [Win32] Our example includes a copy of glfw3.lib pre-compiled with VS2010 to maximize ease of testing and compatibility with old VS compilers.
 // To link with VS2010-era libraries, VS2015+ requires linking with legacy_stdio_definitions.lib, which we do using this pragma.
 // Your own project should not be affected, as you are likely to link with a newer binary of GLFW that is adequate for your version of Visual Studio.
@@ -464,6 +477,8 @@ char cell_levels[256] = "2";
 // Количество слоев на один уровень
 char cell_layers[256] = "3";
 
+std::string tmpMapPath = "";
+
 bool setup_end = false;
 
 const char* items[] = { "NONE", "BRUSH", "HOSTAGE", "TERRORIST", "COUNTER-TERRORIST", "LIGHT", "BUYZONE BRUSH", "BOMBZONE BRUSH", "WATER BRUSH" };
@@ -588,57 +603,67 @@ void DrawUnrealGUI()
 			setup_end = true;
 		}
 		ImGui::SameLine();
-		if (ImGui::Button("LOAD LAST"))
-		{
-			int tmp_int_value = 0;
-			std::ifstream tmpmap("umdt.map.bin", std::ios::in | std::ios::binary);
-			if (tmpmap.is_open())
-			{
-				tmpmap.read((char*)&tmp_int_value, 4);
-				snprintf(cell_x, sizeof(cell_x), "%d", tmp_int_value);
-				tmpmap.read((char*)&tmp_int_value, 4);
-				snprintf(cell_y, sizeof(cell_y), "%d", tmp_int_value);
-				tmpmap.read((char*)&tmp_int_value, 4);
-				snprintf(cell_size, sizeof(cell_size), "%d", tmp_int_value);
-				tmpmap.read((char*)&tmp_int_value, 4);
-				snprintf(cell_height, sizeof(cell_height), "%d", tmp_int_value);
-				tmpmap.read((char*)&tmp_int_value, 4);
-				snprintf(cell_levels, sizeof(cell_levels), "%d", tmp_int_value);
-				tmpmap.read((char*)&tmp_int_value, 4);
-				snprintf(cell_layers, sizeof(cell_layers), "%d", tmp_int_value);
 
-				cell tmpcell = cell();
-				tmpcell.height = 0;
-				tmpcell.height_offset = 0;
-				tmpcell.type = cell_none;
-				cell_list.clear();
-
-				for (int lvl = 0; lvl < atoi(cell_levels); lvl++)
+		if (ifd::FileDialog::Instance().IsDone("MapOpenDialog")) {
+			if (ifd::FileDialog::Instance().HasResult()) {
+				std::filesystem::path res = ifd::FileDialog::Instance().GetResult();
+				int tmp_int_value = 0;
+				std::ifstream tmpmap(res.string(), std::ios::in | std::ios::binary);
+				if (tmpmap.is_open())
 				{
-					for (int layer = 0; layer < atoi(cell_layers); layer++)
+					tmpmap.read((char*)&tmp_int_value, 4);
+					snprintf(cell_x, sizeof(cell_x), "%d", tmp_int_value);
+					tmpmap.read((char*)&tmp_int_value, 4);
+					snprintf(cell_y, sizeof(cell_y), "%d", tmp_int_value);
+					tmpmap.read((char*)&tmp_int_value, 4);
+					snprintf(cell_size, sizeof(cell_size), "%d", tmp_int_value);
+					tmpmap.read((char*)&tmp_int_value, 4);
+					snprintf(cell_height, sizeof(cell_height), "%d", tmp_int_value);
+					tmpmap.read((char*)&tmp_int_value, 4);
+					snprintf(cell_levels, sizeof(cell_levels), "%d", tmp_int_value);
+					tmpmap.read((char*)&tmp_int_value, 4);
+					snprintf(cell_layers, sizeof(cell_layers), "%d", tmp_int_value);
+
+					cell tmpcell = cell();
+					tmpcell.height = 0;
+					tmpcell.height_offset = 0;
+					tmpcell.type = cell_none;
+					cell_list.clear();
+
+					for (int lvl = 0; lvl < atoi(cell_levels); lvl++)
 					{
-						for (int x = 0; x < atoi(cell_x); x++)
+						for (int layer = 0; layer < atoi(cell_layers); layer++)
 						{
-							for (int y = 0; y < atoi(cell_y); y++)
+							for (int x = 0; x < atoi(cell_x); x++)
 							{
-								tmpmap.read((char*)&tmpcell.height, 1);
-								tmpmap.read((char*)&tmpcell.height_offset, 1);
-								tmpmap.read((char*)&tmpcell.type, 1);
-								cell_list.push_back(tmpcell);
+								for (int y = 0; y < atoi(cell_y); y++)
+								{
+									tmpmap.read((char*)&tmpcell.height, 1);
+									tmpmap.read((char*)&tmpcell.height_offset, 1);
+									tmpmap.read((char*)&tmpcell.type, 1);
+									cell_list.push_back(tmpcell);
+								}
 							}
 						}
 					}
+
+
+					int skybool = UseSkyBorders ? 1 : 0;
+					tmpmap.read((char*)&skybool, 4);
+
+					UseSkyBorders = skybool != 0;
+
+					setup_end = true;
+					tmpmap.close();
 				}
-
-
-				int skybool = UseSkyBorders ? 1 : 0;
-				tmpmap.read((char*)&skybool, 4);
-
-				UseSkyBorders = skybool != 0;
-
-				setup_end = true;
-				tmpmap.close();
 			}
+			ifd::FileDialog::Instance().Close();
+		}
+
+
+		if (ImGui::Button("LOAD MAP"))
+		{
+			ifd::FileDialog::Instance().Open("MapOpenDialog", "Open a map", "Map file (*.umd){.umd},.*", false, tmpMapPath);
 		}
 
 		ImGui::End();
@@ -1002,6 +1027,9 @@ int main(int, char**)
 	GLFWwindow* window = glfwCreateWindow(960, 620, "Unreal Map Draw Tool 1.6", NULL, NULL);
 	if (window == NULL)
 		return 1;
+
+	glewInit();
+
 	glfwMakeContextCurrent(window);
 	glfwSwapInterval(0);
 
@@ -1017,9 +1045,39 @@ int main(int, char**)
 	// Setup Platform/Renderer backends
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL3_Init(glsl_version);
+	
+	ImFontConfig config;
+	config.FontBuilderFlags = 1 << 9;
+	config.MergeMode = true;
 
 	io.Fonts->AddFontDefault();
+
+	io.Fonts->AddFontFromMemoryCompressedTTF((const char*)compressed_data, compressed_size, 14.0, &config, io.Fonts->GetGlyphRangesCyrillic());
+
+	io.Fonts->AddFontFromMemoryCompressedTTF((const char*)compressed_data, compressed_size, 14.0, &config);
+	io.Fonts->Build();
+
 	io.ConfigWindowsMoveFromTitleBarOnly = true;
+
+	ifd::FileDialog::Instance().CreateTexture = [](uint8_t* data, int w, int h, char fmt) -> void* {
+		GLuint tex;
+
+		glGenTextures(1, &tex);
+		glBindTexture(GL_TEXTURE_2D, tex);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, (fmt == 0) ? GL_BGRA : GL_RGBA, GL_UNSIGNED_BYTE, data);
+		glBindTexture(GL_TEXTURE_2D, 0);
+
+		return (void*)tex;
+	};
+	ifd::FileDialog::Instance().DeleteTexture = [](void* tex) {
+		GLuint texID = (GLuint)((uintptr_t)tex);
+		glDeleteTextures(1, &texID);
+	};
+
 	// Main loop
 	while (!glfwWindowShouldClose(window))
 	{
@@ -1034,9 +1092,7 @@ int main(int, char**)
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
-
 		DrawUnrealGUI();
-
 		// Rendering
 		ImGui::Render();
 		int display_w, display_h;
