@@ -27,6 +27,10 @@
 #pragma comment(lib, "legacy_stdio_definitions")
 #endif
 
+
+#define RUSSIAN_LANGUAGE
+
+
 static void glfw_error_callback(int error, const char* description)
 {
 	fprintf(stderr, "Glfw Error %d: %s\n", error, description);
@@ -194,7 +198,7 @@ void GenerateUnrealMap(std::string fpath, float cell_size, float cell_height, fl
 
 	int lvl_save, layer_save, x_save, y_save;
 
-	float item_z_offset = -(cell_height * cell_levels);
+	float item_z_offset = -(cell_height * cell_levels / 2.0f);
 	float item_x_offset = -(cell_size * (abs(x_min) + abs(x_max) + 1) / 2.0f);
 	float item_y_offset = cell_size * (abs(y_min) + abs(y_max) + 1) / 2.0f;
 
@@ -207,7 +211,6 @@ void GenerateUnrealMap(std::string fpath, float cell_size, float cell_height, fl
 			item_z_offset, "CRETE4_FLR02");
 	output_bruhes << std::endl;
 
-
 	output_bruhes <<
 		GenerateCuboid(item_x_offset, item_y_offset,
 			-item_z_offset,
@@ -215,8 +218,6 @@ void GenerateUnrealMap(std::string fpath, float cell_size, float cell_height, fl
 			-item_y_offset,
 			-item_z_offset + cell_size, UseSkyBorders ? "SKY" : "CRETE4_WALL01C");
 	output_bruhes << std::endl;
-
-
 
 	output_bruhes <<
 		GenerateCuboid(item_x_offset - cell_size, item_y_offset,
@@ -234,7 +235,6 @@ void GenerateUnrealMap(std::string fpath, float cell_size, float cell_height, fl
 			-item_z_offset + cell_size, UseSkyBorders ? "SKY" : "CRETE4_WALL01C");
 	output_bruhes << std::endl;
 
-
 	output_bruhes <<
 		GenerateCuboid(item_x_offset - cell_size, item_y_offset + cell_size,
 			item_z_offset - cell_size,
@@ -242,8 +242,6 @@ void GenerateUnrealMap(std::string fpath, float cell_size, float cell_height, fl
 			item_y_offset,
 			-item_z_offset + cell_size, UseSkyBorders ? "SKY" : "CRETE4_WALL01C");
 	output_bruhes << std::endl;
-
-
 
 	output_bruhes <<
 		GenerateCuboid(item_x_offset - cell_size, -item_y_offset,
@@ -308,7 +306,6 @@ void GenerateUnrealMap(std::string fpath, float cell_size, float cell_height, fl
 						{
 							std::vector<int> items_for_erase;
 							y++;
-							//tmp_item++;
 							for (x = 0; x < x_save; x++)
 							{
 								tmp_item++;
@@ -389,7 +386,7 @@ void GenerateUnrealMap(std::string fpath, float cell_size, float cell_height, fl
 								else
 									output_entities << "\"classname\" \"hostage_entity\"" << std::endl;
 								output_entities << GenerateOriginString(item_x_offset + cell_size / 2.0f + cell_size * x, item_y_offset - cell_size / 2.0f - cell_size * y,
-									GetMinZ_fromPercent(item_z_offset, cell_height, (float)cur_cell.height_offset) + cell_height / 2.0f);
+									cur_cell.type == cell_type::cell_light && cur_cell.height_offset > 0 ? GetMinZ_fromPercent(item_z_offset, cell_height, (float)cur_cell.height_offset) : item_z_offset + cell_height / 2.0f);
 								output_entities << std::endl;
 							}
 							else if (cur_cell.type == cell_type::cell_buyzone || cur_cell.type == cell_type::cell_bombzone
@@ -451,29 +448,37 @@ void GenerateUnrealMap(std::string fpath, float cell_size, float cell_height, fl
 }
 
 
-// ������ ����� ������
+// Размер одной ячейки
 char cell_size[256] = "32";
-// ������ ����� ������
+// Высота одной ячейки
 char cell_height[256] = "128";
-// ���������� ����� �� X
+// Количество ячеек по X
 char cell_x[256] = "64";
-// ���������� ����� �� Y
+// Количество ячеек по Y
 char cell_y[256] = "64";
-// ���������� �������
+// Количество уровней
 char cell_levels[256] = "2";
-// ���������� ����� �� ���� �������
+// Количество слоев на один уровень
 char cell_layers[256] = "3";
 
 std::string tmpMapPath = "";
 
 bool setup_end = false;
 
+// Список доступных для выбора брашей и сущностей
+
+#ifdef RUSSIAN_LANGUAGE
+const char* items[] = { "ПУСТО", "БРАШ", "ЗАЛОЖНИК", "ТЕРРОР", "КОНТР-ТЕРРОР", "СВЕТ", "ЗОНА ЗАКУПКИ", "ПЛЕНТ ЗОНА", "ВОДА" };
+cell_type items_types[] = { cell_type::cell_none, cell_type::cell_brush, cell_type::cell_hostage, cell_type::cell_player_TT, cell_type::cell_player_CT,
+		cell_type::cell_light, cell_type::cell_buyzone, cell_type::cell_bombzone, cell_type::cell_waterzone };
+const char* current_item = "ПУСТО";
+#else 
+const char* current_item = "NONE";
 const char* items[] = { "NONE", "BRUSH", "HOSTAGE", "TERRORIST", "COUNTER-TERRORIST", "LIGHT", "BUYZONE BRUSH", "BOMBZONE BRUSH", "WATER BRUSH" };
 cell_type items_types[] = { cell_type::cell_none, cell_type::cell_brush, cell_type::cell_hostage, cell_type::cell_player_TT, cell_type::cell_player_CT,
 		cell_type::cell_light, cell_type::cell_buyzone, cell_type::cell_bombzone, cell_type::cell_waterzone };
+#endif
 
-
-const char* current_item = "NONE";
 cell_type c_type = cell_type::cell_none;
 char cur_cell_height[256] = "100";
 char cur_cell_height_offset[256] = "0";
@@ -497,6 +502,23 @@ void DrawUnrealGUI()
 	if (!setup_end)
 	{
 		ImGui::SetNextWindowPos(ImVec2(350.0f, 150.0f), ImGuiCond_FirstUseEver);
+#ifdef RUSSIAN_LANGUAGE
+
+		ImGui::Begin("Начальная настройка", nullptr, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize);
+
+		ImGui::Text("Количество ячеек по X");
+		ImGui::InputText("##text1", cell_x, sizeof(cell_x));
+		ImGui::Text("Количество ячеек по Y");
+		ImGui::InputText("##text2", cell_y, sizeof(cell_y));
+		ImGui::Text("Размер ячейки в юнитах");
+		ImGui::InputText("##text3", cell_size, sizeof(cell_size));
+		ImGui::Text("Высота ячейки в юнитах");
+		ImGui::InputText("##text4", cell_height, sizeof(cell_height));
+		ImGui::Text("Количество уровней карты");
+		ImGui::InputText("##text5", cell_levels, sizeof(cell_levels));
+		ImGui::Text("Слоев на один уровень");
+		ImGui::InputText("##text6", cell_layers, sizeof(cell_layers));
+#else 
 		ImGui::Begin("Setup", nullptr, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize);
 
 		ImGui::Text("Cell X count");
@@ -511,7 +533,7 @@ void DrawUnrealGUI()
 		ImGui::InputText("##text5", cell_levels, sizeof(cell_levels));
 		ImGui::Text("Layers for one level");
 		ImGui::InputText("##text6", cell_layers, sizeof(cell_layers));
-
+#endif
 		if (atoi(cell_x) < 4)
 		{
 			snprintf(cell_x, sizeof(cell_x), "%d", 4);
@@ -565,8 +587,11 @@ void DrawUnrealGUI()
 		{
 			snprintf(cell_layers, sizeof(cell_layers), "%d", 32);
 		}
-
+#ifdef RUSSIAN_LANGUAGE
+		if (ImGui::Button("НОВАЯ КАРТА"))
+#else
 		if (ImGui::Button("START NEW"))
+#endif
 		{
 			cell tmpcell = cell();
 			tmpcell.height = 0;
@@ -647,8 +672,11 @@ void DrawUnrealGUI()
 			ifd::FileDialog::Instance().Close();
 		}
 
-
+#ifdef RUSSIAN_LANGUAGE
+		if (ImGui::Button("ЗАГРУЗИТЬ КАРТУ"))
+#else
 		if (ImGui::Button("LOAD MAP"))
+#endif
 		{
 			ifd::FileDialog::Instance().Open("MapOpenDialog", "Open a map", "Map file (*.umd){.umd},.*", false, tmpMapPath);
 		}
@@ -659,12 +687,19 @@ void DrawUnrealGUI()
 	if (setup_end)
 	{
 		ImGui::SetNextWindowPos(ImVec2(5.0f, 5.0f), ImGuiCond_FirstUseEver);
+#ifdef RUSSIAN_LANGUAGE
+		ImGui::Begin("ПАНЕЛЬ ИНСТРУМЕНТОВ", nullptr, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize);
+		ImGui::Text("Нажмите левую кнопку мыши для рисования");
+		ImGui::Text("Нажмите правую кнопку мыши для очистки");
+		ImGui::Separator();
+		ImGui::Text("Выберите тип ячейки:");
+#else 
 		ImGui::Begin("DRAW BAR", nullptr, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize);
 		ImGui::Text("Press left mouse to fill cell");
 		ImGui::Text("Press right mouse to clear cell");
 		ImGui::Separator();
 		ImGui::Text("Select cell type:");
-
+#endif
 		if (ImGui::BeginCombo("##text7", current_item))
 		{
 			for (int n = 0; n < IM_ARRAYSIZE(items); n++)
@@ -688,11 +723,17 @@ void DrawUnrealGUI()
 			}
 			ImGui::EndCombo();
 		}
+#ifdef RUSSIAN_LANGUAGE
+		ImGui::Text("Расстояние от земли в проц. (0-100%):");
+		ImGui::InputText("##text9", cur_cell_height_offset, sizeof(cur_cell_height_offset));
+		ImGui::Text("Высота от земли в процентах (0-100%):");
+		ImGui::InputText("##text8", cur_cell_height, sizeof(cur_cell_height));
+#else 
 		ImGui::Text("Select cell start Z in percent(0-100):");
 		ImGui::InputText("##text9", cur_cell_height_offset, sizeof(cur_cell_height_offset));
 		ImGui::Text("Select cell height in percent(0-100):");
 		ImGui::InputText("##text8", cur_cell_height, sizeof(cur_cell_height));
-
+#endif
 		if (atoi(cur_cell_height_offset) < 0)
 		{
 			snprintf(cur_cell_height_offset, sizeof(cur_cell_height_offset), "%d", 0);
@@ -707,21 +748,33 @@ void DrawUnrealGUI()
 			snprintf(cur_cell_height, sizeof(cur_cell_height), "%d", (100 - atoi(cur_cell_height_offset)));
 		}
 
+		if (atoi(cur_cell_height) < 1)
+		{
+			snprintf(cur_cell_height, sizeof(cur_cell_height), "%d", 1);
+		}
+
 		if (c_type == cell_type::cell_waterzone && atoi(cur_cell_height) == 100 && atoi(cur_cell_height_offset) == 0)
 		{
 			snprintf(cur_cell_height, sizeof(cur_cell_height), "%d", 99);
 		}
 
-		ImGui::Checkbox("Sky borders", &UseSkyBorders);
-
+		ImGui::Checkbox("Skybox", &UseSkyBorders);
+#ifdef RUSSIAN_LANGUAGE
+		if (ImGui::Button("Залить весь слой"))
+#else 
 		if (ImGui::Button("Fill current layer"))
+#endif
 		{
 			fill_current_layer = true;
 		}
 
 		ImGui::SameLine();
 
+#ifdef RUSSIAN_LANGUAGE
+		if (ImGui::Button("Очистить всё"))
+#else
 		if (ImGui::Button("Clear map"))
+#endif
 		{
 			cell tmpcell = cell();
 			tmpcell.height = 0;
@@ -746,7 +799,11 @@ void DrawUnrealGUI()
 
 		ImGui::SameLine();
 
+#ifdef RUSSIAN_LANGUAGE
+		if (ImGui::Button("Очистить слой"))
+#else
 		if (ImGui::Button("Clear layer"))
+#endif
 		{
 			clear_current_layer = true;
 		}
@@ -764,7 +821,11 @@ void DrawUnrealGUI()
 			ifd::FileDialog::Instance().Close();
 		}
 
+#ifdef RUSSIAN_LANGUAGE
+		if (ImGui::Button("Сохранить .map"))
+#else 
 		if (ImGui::Button("Generate map!"))
+#endif
 		{
 			ifd::FileDialog::Instance().Save("MapGenDialog", "Generate .map file", "Map file (*.map){.map},.*", tmpMapPath);
 		}
@@ -813,7 +874,11 @@ void DrawUnrealGUI()
 			ifd::FileDialog::Instance().Close();
 		}
 
+#ifdef RUSSIAN_LANGUAGE
+		if (ImGui::Button("Сохранить .umd"))
+#else
 		if (ImGui::Button("Save map!"))
+#endif
 		{
 			ifd::FileDialog::Instance().Save("MapSaveDialog", "Save a map", "Map file (*.umd){.umd},.*", tmpMapPath);
 		}
@@ -821,7 +886,11 @@ void DrawUnrealGUI()
 
 		ImGui::SameLine();
 
+#ifdef RUSSIAN_LANGUAGE
+		if (ImGui::Button("Закрыть проект"))
+#else 
 		if (ImGui::Button("Close map"))
+#endif
 		{
 			setup_end = false;;
 		}
@@ -841,7 +910,11 @@ void DrawUnrealGUI()
 		for (int lvl = 0; lvl < atoi(cell_levels); lvl++)
 		{
 			char levelname[64];
+#ifdef RUSSIAN_LANGUAGE
+			snprintf(levelname, sizeof(levelname), "Уровень %d", lvl + 1); 
+#else 
 			snprintf(levelname, sizeof(levelname), "Level %d", lvl + 1);
+#endif
 			ImGui::SetNextItemWidth(100);
 
 			if (ImGui::BeginTabItem(levelname))
@@ -849,10 +922,15 @@ void DrawUnrealGUI()
 				ImGui::BeginTabBar("##text11", ImGuiTabBarFlags_FittingPolicyScroll);
 				for (int layer = 0; layer < atoi(cell_layers); layer++)
 				{
+#ifdef RUSSIAN_LANGUAGE
+					snprintf(levelname, sizeof(levelname), "Слой %d", lvl + layer);
+#else 
 					snprintf(levelname, sizeof(levelname), "Layer %d", lvl + layer);
+#endif
 					if (ImGui::BeginTabItem(levelname))
 					{
 						snprintf(levelname, sizeof(levelname), "##level%d", lvl + 1);
+						#
 						ImGui::BeginChild(levelname, ImVec2(0, 0), true, ImGuiWindowFlags_AlwaysVerticalScrollbar
 							| ImGuiWindowFlags_AlwaysHorizontalScrollbar);
 
@@ -878,34 +956,61 @@ void DrawUnrealGUI()
 							for (int x = 0; x < atoi(cell_x); x++)
 							{
 								char tmplbl[64];
-								if (cell_list[cur_item].type == cell_type::cell_light ||
-									cell_list[cur_item].type == cell_type::cell_hostage ||
+								if (cell_list[cur_item].type == cell_type::cell_hostage ||
 									cell_list[cur_item].type == cell_type::cell_player_CT ||
 									cell_list[cur_item].type == cell_type::cell_player_TT)
+								{
+									cell_list[cur_item].height = 100;
+									cell_list[cur_item].height_offset = 0;
 									snprintf(tmplbl, sizeof(tmplbl), "##item%d", cur_item);
+								}
+								else if (cell_list[cur_item].type == cell_type::cell_light)
+									snprintf(tmplbl, sizeof(tmplbl), "%d##item%d", cell_list[cur_item].height_offset, cur_item);
 								else
 									snprintf(tmplbl, sizeof(tmplbl), "%d\n%d##item%d", cell_list[cur_item].height, cell_list[cur_item].height_offset, cur_item);
 
 								ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(2.0f, 2.0f));
 								ImGui::PushStyleColor(ImGuiCol_Button, get_cell_color(cur_item));
 
+								if (cell_list[cur_item].type == cell_type::cell_light && cell_list[cur_item].height_offset != 0)
+									ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0, 0.0, 0.0, 1.0));
+
 								ImGui::Button(tmplbl, ImVec2(30, 30));
 
-								ImGui::PopStyleVar();
+								if (cell_list[cur_item].type == cell_type::cell_light && cell_list[cur_item].height_offset != 0)
+									ImGui::PopStyleColor();
+
 								ImGui::PopStyleColor();
+								ImGui::PopStyleVar();
+
 								if (!any_scrollbar_active && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem))
 								{
 									ImGui::BeginTooltip();
+
+#ifdef RUSSIAN_LANGUAGE
+									ImGui::Text("Тип: %s", items[cell_list[cur_item].type]);
+									ImGui::Text("Коорд. %d/%d(%d/%d)", y + 1, x + 1, (y + 1) * atoi(cell_size), (x + 1) * atoi(cell_size));
+									ImGui::Text("Размер %d", atoi(cell_size));
+#else 
 									ImGui::Text("Type: %s", items[cell_list[cur_item].type]);
-									ImGui::Text("Pos %d/%d(%d/%d)", y + 1, x + 1, (y + 1) * atoi(cell_size), (x + 1) * atoi(cell_size));
+									ImGui::Text("Pos %d/%d(%d/%d)", y + 1, x + 1, (y + 1)* atoi(cell_size), (x + 1)* atoi(cell_size));
 									ImGui::Text("Size %d units", atoi(cell_size));
+#endif
 									if (cell_list[cur_item].type == cell_type::cell_brush
 										|| cell_list[cur_item].type == cell_type::cell_buyzone
 										|| cell_list[cur_item].type == cell_type::cell_bombzone
-										|| cell_list[cur_item].type == cell_type::cell_waterzone)
+										|| cell_list[cur_item].type == cell_type::cell_waterzone
+										|| cell_list[cur_item].type == cell_type::cell_light)
 									{
-										ImGui::Text("Height %d units", (int)GetHeight_fromPercent((float)atoi(cell_height), cell_list[cur_item].height));
+#ifdef RUSSIAN_LANGUAGE
+										if (cell_list[cur_item].type != cell_type::cell_light)
+											ImGui::Text("Высота %d", (int)GetHeight_fromPercent((float)atoi(cell_height), cell_list[cur_item].height));
+										ImGui::Text("От земли %d", (int)GetHeightOffset_fromPercent((float)atoi(cell_height), cell_list[cur_item].height_offset));
+#else 
+										if (cell_list[cur_item].type != cell_type::cell_light)
+											ImGui::Text("Height %d units", (int)GetHeight_fromPercent((float)atoi(cell_height), cell_list[cur_item].height));
 										ImGui::Text("Height start %d units", (int)GetHeightOffset_fromPercent((float)atoi(cell_height), cell_list[cur_item].height_offset));
+#endif
 									}
 									ImGui::EndTooltip();
 
