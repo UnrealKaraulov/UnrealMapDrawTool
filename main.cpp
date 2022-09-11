@@ -1132,7 +1132,7 @@ int main(int, char**)
 #endif
 
 	// Create window with graphics context
-	GLFWwindow* window = glfwCreateWindow(960, 620, "Unreal Map Draw Tool 1.7", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(960, 620, "Unreal Map Draw Tool 1.8", NULL, NULL);
 	if (window == NULL)
 		return 1;
 
@@ -1155,16 +1155,21 @@ int main(int, char**)
 	ImGui_ImplOpenGL3_Init(glsl_version);
 
 	ImFontConfig config;
-	config.FontBuilderFlags = 1 << 9;
-	config.MergeMode = true;
 
-	io.Fonts->AddFontDefault();
+	config.SizePixels = 13.0f;
+	config.OversampleH = 3;
+	config.OversampleV = 1;
+	config.RasterizerMultiply = 1.5f;
+	config.PixelSnapH = true;
+
+	io.Fonts->AddFontFromMemoryCompressedTTF((const char*)compressed_data, compressed_size, 14.0, &config);
+
+	config.MergeMode = true;
 
 	io.Fonts->AddFontFromMemoryCompressedTTF((const char*)compressed_data, compressed_size, 14.0, &config, io.Fonts->GetGlyphRangesCyrillic());
 
-	io.Fonts->AddFontFromMemoryCompressedTTF((const char*)compressed_data, compressed_size, 14.0, &config, io.Fonts->GetGlyphRangesJapanese());
+	io.Fonts->AddFontFromMemoryCompressedTTF((const char*)compressed_data, compressed_size, 14.0, &config, io.Fonts->GetGlyphRangesDefault());
 
-	io.Fonts->AddFontFromMemoryCompressedTTF((const char*)compressed_data, compressed_size, 14.0, &config);
 	io.Fonts->Build();
 
 	io.ConfigWindowsMoveFromTitleBarOnly = true;
