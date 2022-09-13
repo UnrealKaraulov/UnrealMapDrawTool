@@ -724,9 +724,9 @@ void DrawUnrealGUI()
 			ImGui::EndCombo();
 		}
 #ifdef RUSSIAN_LANGUAGE
-		ImGui::Text("Расстояние от земли в проц. (0-100%):");
+		ImGui::Text("Расстояние от земли (0-100%):");
 		ImGui::InputText("##text9", cur_cell_height_offset, sizeof(cur_cell_height_offset));
-		ImGui::Text("Высота от земли в процентах (0-100%):");
+		ImGui::Text("Высота в процентах (0-100%):");
 		ImGui::InputText("##text8", cur_cell_height, sizeof(cur_cell_height));
 #else 
 		ImGui::Text("Select cell start Z in percent(0-100):");
@@ -911,9 +911,9 @@ void DrawUnrealGUI()
 		{
 			char levelname[64];
 #ifdef RUSSIAN_LANGUAGE
-			snprintf(levelname, sizeof(levelname), "Уровень %d", lvl + 1); 
+			snprintf(levelname, sizeof(levelname), "Уровень %d##%d", lvl + 1, cur_item);
 #else 
-			snprintf(levelname, sizeof(levelname), "Level %d", lvl + 1);
+			snprintf(levelname, sizeof(levelname), "Level %d##%d", lvl + 1, cur_item);
 #endif
 			ImGui::SetNextItemWidth(100);
 
@@ -923,14 +923,14 @@ void DrawUnrealGUI()
 				for (int layer = 0; layer < atoi(cell_layers); layer++)
 				{
 #ifdef RUSSIAN_LANGUAGE
-					snprintf(levelname, sizeof(levelname), "Слой %d", lvl + layer);
+					snprintf(levelname, sizeof(levelname), "Слой %d##%d", layer + 1, cur_item);
 #else 
-					snprintf(levelname, sizeof(levelname), "Layer %d", lvl + layer);
+					snprintf(levelname, sizeof(levelname), "Layer %d##%d", layer + 1, cur_item);
 #endif
 					if (ImGui::BeginTabItem(levelname))
 					{
 						snprintf(levelname, sizeof(levelname), "##level%d", lvl + 1);
-						#
+
 						ImGui::BeginChild(levelname, ImVec2(0, 0), true, ImGuiWindowFlags_AlwaysVerticalScrollbar
 							| ImGuiWindowFlags_AlwaysHorizontalScrollbar);
 
@@ -1132,7 +1132,7 @@ int main(int, char**)
 #endif
 
 	// Create window with graphics context
-	GLFWwindow* window = glfwCreateWindow(960, 620, "Unreal Map Draw Tool 1.8", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(960, 620, "Unreal Map Draw Tool 1.9", NULL, NULL);
 	if (window == NULL)
 		return 1;
 
