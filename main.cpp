@@ -28,7 +28,7 @@
 #endif
 
 
-#define RUSSIAN_LANGUAGE
+//#define RUSSIAN_LANGUAGE
 
 
 static void glfw_error_callback(int error, const char* description)
@@ -989,11 +989,11 @@ void DrawUnrealGUI()
 
 #ifdef RUSSIAN_LANGUAGE
 									ImGui::Text("Тип: %s", items[cell_list[cur_item].type]);
-									ImGui::Text("Коорд. %d/%d(%d/%d)", y + 1, x + 1, (y + 1) * atoi(cell_size), (x + 1) * atoi(cell_size));
+									ImGui::Text("Коорд. %d/%d(%d/%d)", x + 1, y + 1, (x + 1) * atoi(cell_size), (y + 1) * atoi(cell_size));
 									ImGui::Text("Размер %d", atoi(cell_size));
 #else 
 									ImGui::Text("Type: %s", items[cell_list[cur_item].type]);
-									ImGui::Text("Pos %d/%d(%d/%d)", y + 1, x + 1, (y + 1)* atoi(cell_size), (x + 1)* atoi(cell_size));
+									ImGui::Text("Pos %d/%d(%d/%d)", x + 1, y + 1, (x + 1)* atoi(cell_size), (y + 1)* atoi(cell_size));
 									ImGui::Text("Size %d units", atoi(cell_size));
 #endif
 									if (cell_list[cur_item].type == cell_type::cell_brush
