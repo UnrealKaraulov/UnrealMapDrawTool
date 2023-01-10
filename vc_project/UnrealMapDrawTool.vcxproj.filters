@@ -1,0 +1,93 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="IMGUI_SRC">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="IMGUI_H">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="GLFW_SRC">
+      <UniqueIdentifier>{605e54d4-8abd-46c6-8d5c-de00ff169814}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="FILEDIALOG_SRC">
+      <UniqueIdentifier>{f9c1fbea-33ba-4e53-9afb-9c5edbdc5c76}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="../src/imgui.cpp">
+      <Filter>IMGUI_SRC</Filter>
+    </ClCompile>
+    <ClCompile Include="../src/imgui_demo.cpp">
+      <Filter>IMGUI_SRC</Filter>
+    </ClCompile>
+    <ClCompile Include="../src/imgui_draw.cpp">
+      <Filter>IMGUI_SRC</Filter>
+    </ClCompile>
+    <ClCompile Include="../src/imgui_tables.cpp">
+      <Filter>IMGUI_SRC</Filter>
+    </ClCompile>
+    <ClCompile Include="../src/imgui_widgets.cpp">
+      <Filter>IMGUI_SRC</Filter>
+    </ClCompile>
+    <ClCompile Include="../src/imgui_impl_glfw.cpp">
+      <Filter>IMGUI_SRC</Filter>
+    </ClCompile>
+    <ClCompile Include="../src/imgui_impl_opengl3.cpp">
+      <Filter>IMGUI_SRC</Filter>
+    </ClCompile>
+    <ClCompile Include="../src/main.cpp" />
+    <ClCompile Include="../src/ImFileDialog.cpp">
+      <Filter>FILEDIALOG_SRC</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="../src/font.h">
+      <Filter>IMGUI_H</Filter>
+    </ClInclude>
+    <ClInclude Include="../src/imconfig.h">
+      <Filter>IMGUI_H</Filter>
+    </ClInclude>
+    <ClInclude Include="../src/ImFileDialog.h">
+      <Filter>IMGUI_H</Filter>
+    </ClInclude>
+    <ClInclude Include="../src/imgui.h">
+      <Filter>IMGUI_H</Filter>
+    </ClInclude>
+    <ClInclude Include="../src/imgui_impl_glfw.h">
+      <Filter>IMGUI_H</Filter>
+    </ClInclude>
+    <ClInclude Include="../src/imgui_impl_opengl3.h">
+      <Filter>IMGUI_H</Filter>
+    </ClInclude>
+    <ClInclude Include="../src/imgui_impl_opengl3_loader.h">
+      <Filter>IMGUI_H</Filter>
+    </ClInclude>
+    <ClInclude Include="../src/imgui_internal.h">
+      <Filter>IMGUI_H</Filter>
+    </ClInclude>
+    <ClInclude Include="../src/imstb_rectpack.h">
+      <Filter>IMGUI_H</Filter>
+    </ClInclude>
+    <ClInclude Include="../src/imstb_textedit.h">
+      <Filter>IMGUI_H</Filter>
+    </ClInclude>
+    <ClInclude Include="../src/imstb_truetype.h">
+      <Filter>IMGUI_H</Filter>
+    </ClInclude>
+    <ClInclude Include="../src/stb_image.h">
+      <Filter>IMGUI_H</Filter>
+    </ClInclude>
+    <ClInclude Include="../src/glew.h">
+      <Filter>GLFW_SRC</Filter>
+    </ClInclude>
+    <ClInclude Include="../src/GLFW/glfw3.h">
+      <Filter>GLFW_SRC</Filter>
+    </ClInclude>
+    <ClInclude Include="../src/GLFW/glfw3native.h">
+      <Filter>GLFW_SRC</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
