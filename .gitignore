@@ -43,5 +43,5 @@ Release/UnrealMapDrawTool.exe
 x64/Release/UnrealMapDrawTool.exe
 vc_project/.vs/UnrealMapDrawTool/v17/.suo
 vc_project/.vs/UnrealMapDrawTool/v17/Preview/Browse.VC.db
-vc_project/x64/Debug/UnrealMapDrawTool.ilk
-vc_project/x64/Debug/vc143.idb
+vc_project/x64/
+vc_project/Release/
