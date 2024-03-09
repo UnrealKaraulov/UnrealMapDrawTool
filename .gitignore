@@ -45,3 +45,5 @@ vc_project/.vs/UnrealMapDrawTool/v17/.suo
 vc_project/.vs/UnrealMapDrawTool/v17/Preview/Browse.VC.db
 vc_project/x64/
 vc_project/Release/
+*.exe
+*.db

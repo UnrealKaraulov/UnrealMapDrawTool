@@ -73,18 +73,22 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)\..\Release\</OutDir>
     <TargetName>DrawMap_x64d.exe</TargetName>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);.\..\src;</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(SolutionDir)\..\Release\</OutDir>
     <TargetName>DrawMap_x32d.exe</TargetName>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);.\..\src;</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(SolutionDir)\..\Release\</OutDir>
     <TargetName>DrawMap_x32.exe</TargetName>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);.\..\src;</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)\..\Release\</OutDir>
     <TargetName>DrawMap_x64.exe</TargetName>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);.\..\src;</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
