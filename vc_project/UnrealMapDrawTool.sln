@@ -9,6 +9,8 @@ Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
 		Debug|x86 = Debug|x86
+		JackPlugin|x64 = JackPlugin|x64
+		JackPlugin|x86 = JackPlugin|x86
 		Release|x64 = Release|x64
 		Release|x86 = Release|x86
 	EndGlobalSection
@@ -17,6 +19,10 @@ Global
 		{DCE3ED16-0878-433D-BF2C-40452C36B86D}.Debug|x64.Build.0 = Debug|x64
 		{DCE3ED16-0878-433D-BF2C-40452C36B86D}.Debug|x86.ActiveCfg = Debug|Win32
 		{DCE3ED16-0878-433D-BF2C-40452C36B86D}.Debug|x86.Build.0 = Debug|Win32
+		{DCE3ED16-0878-433D-BF2C-40452C36B86D}.JackPlugin|x64.ActiveCfg = JackPlugin|x64
+		{DCE3ED16-0878-433D-BF2C-40452C36B86D}.JackPlugin|x64.Build.0 = JackPlugin|x64
+		{DCE3ED16-0878-433D-BF2C-40452C36B86D}.JackPlugin|x86.ActiveCfg = JackPlugin|Win32
+		{DCE3ED16-0878-433D-BF2C-40452C36B86D}.JackPlugin|x86.Build.0 = JackPlugin|Win32
 		{DCE3ED16-0878-433D-BF2C-40452C36B86D}.Release|x64.ActiveCfg = Release|x64
 		{DCE3ED16-0878-433D-BF2C-40452C36B86D}.Release|x64.Build.0 = Release|x64
 		{DCE3ED16-0878-433D-BF2C-40452C36B86D}.Release|x86.ActiveCfg = Release|Win32

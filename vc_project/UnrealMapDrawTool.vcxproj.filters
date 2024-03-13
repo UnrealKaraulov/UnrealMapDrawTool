@@ -90,4 +90,9 @@
       <Filter>GLFW_SRC</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="../src/jack_api.def">
+      <Filter>IMGUI_SRC</Filter>
+    </None>
+  </ItemGroup>
 </Project>

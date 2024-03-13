@@ -1,0 +1,6 @@
+LIBRARY vpKarPlugx64
+EXPORTS
+vpMain
+vpEnumActions
+vpEnumImportFormats
+vpImport

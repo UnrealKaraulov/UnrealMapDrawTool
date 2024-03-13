@@ -1,8 +1,3 @@
-// Dear ImGui: standalone example application for GLFW + OpenGL 3, using programmable pipeline
-// (GLFW is a cross-platform general purpose library for handling windows, inputs, OpenGL/Vulkan/Metal graphics context creation, etc.)
-// If you are new to Dear ImGui, read documentation from the docs/ folder + read the top of imgui.cpp.
-// Read online: https://github.com/ocornut/imgui/tree/master/docs
-#define GLEW_STATIC
 #include <stdio.h>
 
 #include <string>
@@ -11,6 +6,9 @@
 #include <sstream>
 #include <fstream>
 
+#include <filesystem>
+
+#ifndef JACK_PLUGIN
 #include "font.h"
 #include "glew.h"
 
@@ -22,14 +20,13 @@
 #include "imgui_internal.h"
 #include "imstb_truetype.h"
 #include "ImFileDialog.h"
+#endif 
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1900) && !defined(IMGUI_DISABLE_WIN32_FUNCTIONS)
 #pragma comment(lib, "legacy_stdio_definitions")
 #endif
 
-
 //#define RUSSIAN_LANGUAGE
-
 
 static void glfw_error_callback(int error, const char* description)
 {
@@ -58,7 +55,21 @@ struct cell
 
 std::vector<cell> cell_list;
 
+bool cell_edit(cell& c, unsigned char new_height, unsigned char new_offset, cell_type new_type)
+{
+	if (c.height == new_height && c.height_offset == new_offset && c.type == new_type)
+	{
+		return false;
+	}
 
+	c.height = new_height;
+	c.height_offset = new_offset;
+	c.type = new_type;
+
+	return true;
+}
+
+#ifndef JACK_PLUGIN
 ImVec4 get_cell_color(cell_type c_type)
 {
 	switch (c_type)
@@ -98,7 +109,7 @@ ImVec4 get_cell_color(int id)
 	cell_type c_type = cell_list[id].type;
 	return get_cell_color(c_type);
 }
-
+#endif
 std::string GenerateCuboid(float x1, float y1, float z1, float x2, float y2, float z2, const char* texture = "AAATRIGGER")
 {
 	std::stringstream outcuboid;
@@ -144,8 +155,7 @@ float GetHeightOffset_fromPercent(float cell_height, float z_offset)
 
 bool UseSkyBorders = false;
 
-
-void GenerateUnrealMap(std::string fpath, float cell_size, float cell_height, float cell_x, float cell_y, int cell_levels, int cell_layers)
+void GenerateUnrealMap(const std::string & fpath, float cell_size, float cell_height, float cell_x, float cell_y, int cell_levels, int cell_layers)
 {
 	int cur_item = 0;
 
@@ -496,6 +506,71 @@ const char* atoint_static(const char* s)
 	return (const char*)&atoi_val;
 }
 
+
+
+bool LoadMap(std::string path)
+{
+	int tmp_int_value = 0;
+	std::ifstream tmpmap(path, std::ios::in | std::ios::binary);
+	if (tmpmap && tmpmap.is_open())
+	{
+		tmpmap.read((char*)&tmp_int_value, 4);
+		snprintf(cell_x, sizeof(cell_x), "%d", tmp_int_value);
+		tmpmap.read((char*)&tmp_int_value, 4);
+		snprintf(cell_y, sizeof(cell_y), "%d", tmp_int_value);
+		tmpmap.read((char*)&tmp_int_value, 4);
+		snprintf(cell_size, sizeof(cell_size), "%d", tmp_int_value);
+		tmpmap.read((char*)&tmp_int_value, 4);
+		snprintf(cell_height, sizeof(cell_height), "%d", tmp_int_value);
+		tmpmap.read((char*)&tmp_int_value, 4);
+		snprintf(cell_levels, sizeof(cell_levels), "%d", tmp_int_value);
+		tmpmap.read((char*)&tmp_int_value, 4);
+		snprintf(cell_layers, sizeof(cell_layers), "%d", tmp_int_value);
+
+		cell tmpcell = cell();
+		tmpcell.height = 0;
+		tmpcell.height_offset = 0;
+		tmpcell.type = cell_none;
+		cell_list.clear();
+
+		for (int lvl = 0; lvl < atoi(cell_levels); lvl++)
+		{
+			for (int layer = 0; layer < atoi(cell_layers); layer++)
+			{
+				for (int y = 0; y < atoi(cell_y); y++)
+				{
+					for (int x = 0; x < atoi(cell_x); x++)
+					{
+						tmpmap.read((char*)&tmpcell.height, 1);
+						tmpmap.read((char*)&tmpcell.height_offset, 1);
+						tmpmap.read((char*)&tmpcell.type, 1);
+						cell_list.push_back(tmpcell);
+					}
+				}
+			}
+		}
+
+
+		int skybool = UseSkyBorders ? 1 : 0;
+		tmpmap.read((char*)&skybool, 4);
+
+		UseSkyBorders = skybool != 0;
+
+		setup_end = true;
+		tmpmap.close();
+		return true;
+	}
+	return false;
+}
+
+#ifndef JACK_PLUGIN
+
+
+bool AutoSave = false;
+bool NeedSaveChanges = false;
+std::string LastSaveString = { };
+
+
 void DrawUnrealGUI()
 {
 
@@ -619,55 +694,7 @@ void DrawUnrealGUI()
 		if (ifd::FileDialog::Instance().IsDone("MapOpenDialog")) {
 			if (ifd::FileDialog::Instance().HasResult()) {
 				std::filesystem::path res = ifd::FileDialog::Instance().GetResult();
-				int tmp_int_value = 0;
-				std::ifstream tmpmap(res.string(), std::ios::in | std::ios::binary);
-				if (tmpmap.is_open())
-				{
-					tmpmap.read((char*)&tmp_int_value, 4);
-					snprintf(cell_x, sizeof(cell_x), "%d", tmp_int_value);
-					tmpmap.read((char*)&tmp_int_value, 4);
-					snprintf(cell_y, sizeof(cell_y), "%d", tmp_int_value);
-					tmpmap.read((char*)&tmp_int_value, 4);
-					snprintf(cell_size, sizeof(cell_size), "%d", tmp_int_value);
-					tmpmap.read((char*)&tmp_int_value, 4);
-					snprintf(cell_height, sizeof(cell_height), "%d", tmp_int_value);
-					tmpmap.read((char*)&tmp_int_value, 4);
-					snprintf(cell_levels, sizeof(cell_levels), "%d", tmp_int_value);
-					tmpmap.read((char*)&tmp_int_value, 4);
-					snprintf(cell_layers, sizeof(cell_layers), "%d", tmp_int_value);
-
-					cell tmpcell = cell();
-					tmpcell.height = 0;
-					tmpcell.height_offset = 0;
-					tmpcell.type = cell_none;
-					cell_list.clear();
-
-					for (int lvl = 0; lvl < atoi(cell_levels); lvl++)
-					{
-						for (int layer = 0; layer < atoi(cell_layers); layer++)
-						{
-							for (int y = 0; y < atoi(cell_y); y++)
-							{
-								for (int x = 0; x < atoi(cell_x); x++)
-								{
-									tmpmap.read((char*)&tmpcell.height, 1);
-									tmpmap.read((char*)&tmpcell.height_offset, 1);
-									tmpmap.read((char*)&tmpcell.type, 1);
-									cell_list.push_back(tmpcell);
-								}
-							}
-						}
-					}
-
-
-					int skybool = UseSkyBorders ? 1 : 0;
-					tmpmap.read((char*)&skybool, 4);
-
-					UseSkyBorders = skybool != 0;
-
-					setup_end = true;
-					tmpmap.close();
-				}
+				LoadMap(res.string());
 			}
 			ifd::FileDialog::Instance().Close();
 		}
@@ -759,6 +786,24 @@ void DrawUnrealGUI()
 		}
 
 		ImGui::Checkbox("Skybox", &UseSkyBorders);
+
+		ImGui::SameLine();
+
+
+		if (LastSaveString.empty())
+		{
+			ImGui::BeginDisabled();
+			AutoSave = false;
+		}
+
+		ImGui::Checkbox("Auto save", &AutoSave);
+
+
+		if (LastSaveString.empty())
+		{
+			ImGui::EndDisabled();
+		}
+
 #ifdef RUSSIAN_LANGUAGE
 		if (ImGui::Button("Залить весь слой"))
 #else 
@@ -795,6 +840,8 @@ void DrawUnrealGUI()
 					}
 				}
 			}
+
+			NeedSaveChanges = true;
 		}
 
 		ImGui::SameLine();
@@ -814,6 +861,7 @@ void DrawUnrealGUI()
 		if (ifd::FileDialog::Instance().IsDone("MapGenDialog")) {
 			if (ifd::FileDialog::Instance().HasResult()) {
 				std::filesystem::path res = ifd::FileDialog::Instance().GetResult();
+
 				std::vector<cell> tmp_cell_list = cell_list;
 				GenerateUnrealMap(res.string(), (float)atof(cell_size), (float)atof(cell_height), (float)atof(cell_x), (float)atof(cell_y), atoi(cell_levels), atoi(cell_layers));
 				cell_list = tmp_cell_list;
@@ -833,10 +881,17 @@ void DrawUnrealGUI()
 
 
 		int cur_item = 0;
-		if (ifd::FileDialog::Instance().IsDone("MapSaveDialog")) {
-			if (ifd::FileDialog::Instance().HasResult()) {
-				std::filesystem::path res = ifd::FileDialog::Instance().GetResult();
-				std::ofstream tmpmap(res.string(), std::ios::out | std::ios::binary);
+		if (ifd::FileDialog::Instance().IsDone("MapSaveDialog") || (NeedSaveChanges && !LastSaveString.empty())) {
+			if (ifd::FileDialog::Instance().HasResult() || (NeedSaveChanges && !LastSaveString.empty())) {
+
+				if (!NeedSaveChanges)
+				{
+					std::filesystem::path res = ifd::FileDialog::Instance().GetResult();
+					LastSaveString = res.string();
+				}
+				NeedSaveChanges = false;
+
+				std::ofstream tmpmap(LastSaveString, std::ios::out | std::ios::binary);
 				if (tmpmap.is_open())
 				{
 					tmpmap.write((const char*)atoint_static(cell_x), 4);
@@ -960,8 +1015,13 @@ void DrawUnrealGUI()
 									cell_list[cur_item].type == cell_type::cell_player_CT ||
 									cell_list[cur_item].type == cell_type::cell_player_TT)
 								{
-									cell_list[cur_item].height = 100;
-									cell_list[cur_item].height_offset = 0;
+									if (cell_list[cur_item].height != 100 || cell_list[cur_item].height_offset != 0)
+									{
+										if (cell_edit(cell_list[cur_item],100,0, cell_list[cur_item].type))
+										{
+											NeedSaveChanges = true;
+										}
+									}
 									snprintf(tmplbl, sizeof(tmplbl), "##item%d", cur_item);
 								}
 								else if (cell_list[cur_item].type == cell_type::cell_light)
@@ -993,7 +1053,7 @@ void DrawUnrealGUI()
 									ImGui::Text("Размер %d", atoi(cell_size));
 #else 
 									ImGui::Text("Type: %s", items[cell_list[cur_item].type]);
-									ImGui::Text("Pos %d/%d(%d/%d)", x + 1, y + 1, (x + 1)* atoi(cell_size), (y + 1)* atoi(cell_size));
+									ImGui::Text("Pos %d/%d(%d/%d)", x + 1, y + 1, (x + 1) * atoi(cell_size), (y + 1) * atoi(cell_size));
 									ImGui::Text("Size %d units", atoi(cell_size));
 #endif
 									if (cell_list[cur_item].type == cell_type::cell_brush
@@ -1019,22 +1079,25 @@ void DrawUnrealGUI()
 									{
 										if (c_type == cell_type::cell_none)
 										{
-											cell_list[cur_item].type = cell_type::cell_none;
-											cell_list[cur_item].height = 0;
-											cell_list[cur_item].height_offset = 0;
+											if (cell_edit(cell_list[cur_item], 0, 0, cell_type::cell_none))
+											{
+												NeedSaveChanges = true;
+											}
 										}
 										else
 										{
-											cell_list[cur_item].type = c_type;
-											cell_list[cur_item].height = (unsigned char)atoi(cur_cell_height);
-											cell_list[cur_item].height_offset = (unsigned char)atoi(cur_cell_height_offset);
+											if (cell_edit(cell_list[cur_item], (unsigned char)atoi(cur_cell_height), (unsigned char)atoi(cur_cell_height_offset), c_type))
+											{
+												NeedSaveChanges = true;
+											}
 										}
 									}
 									else if (ImGui::IsMouseDown(ImGuiMouseButton_Right))
 									{
-										cell_list[cur_item].type = cell_type::cell_none;
-										cell_list[cur_item].height = 0;
-										cell_list[cur_item].height_offset = 0;
+										if (cell_edit(cell_list[cur_item], 0, 0, cell_type::cell_none))
+										{
+											NeedSaveChanges = true;
+										}
 									}
 								}
 
@@ -1043,12 +1106,22 @@ void DrawUnrealGUI()
 									cell_list[cur_item].type = c_type;
 									cell_list[cur_item].height = (unsigned char)atoi(cur_cell_height);
 									cell_list[cur_item].height_offset = (unsigned char)atoi(cur_cell_height_offset);
+
+									if (AutoSave)
+									{
+										NeedSaveChanges = true;
+									}
 								}
 								else if (clear_current_layer)
 								{
 									cell_list[cur_item].type = cell_type::cell_none;
 									cell_list[cur_item].height = 0;
 									cell_list[cur_item].height_offset = 0;
+
+									if (AutoSave)
+									{
+										NeedSaveChanges = true;
+									}
 								}
 
 								if (x + 1 != atoi(cell_x))
@@ -1098,8 +1171,247 @@ void DrawUnrealGUI()
 		ImGui::End();
 	}
 }
+#endif
 
 
+#ifdef JACK_PLUGIN
+
+#include <Windows.h>
+
+const char* actionName = "About";
+const char* actionName2 = "Enable AutoReload";
+const char* actionDescription = "UnrealMapDrawTool is a map painting tools. Download https://github.com/UnrealKaraulov/UnrealMapDrawTool Extension of maps: .umd. ";
+const char* actionDescription2 = "Auto reload .umd map when change!";
+const char* actionDirectory = "UnrealMapDrawTool";
+const char* actionFormatName = "UnrealMapDrawTool MAP";
+const char* actionFormat = ".umd";
+
+
+DWORD StartTicks = 0;
+DWORD MainThread = 0;
+HHOOK hhookSysMsg = 0;
+
+bool AutoReload = false;
+
+
+std::filesystem::file_time_type lastEditTime = {};
+
+
+std::filesystem::file_time_type GetLastEditTime(std::string path)
+{
+	return std::filesystem::last_write_time(path);
+}
+
+std::string lastFilePath_umd;
+std::string lastFilePath_map;
+
+typedef __int64(__fastcall* pvpImport)(int version, const char* src, unsigned char* data);
+
+unsigned char* importData = NULL;
+
+__int64 import_real()
+{
+	HMODULE mdl = LoadLibraryA("vpHalfLifex64.dll");
+
+	if (!mdl)
+		return 0;
+
+	auto proc = GetProcAddress(mdl, "vpImport");
+	if (!proc)
+		return 0;
+
+	pvpImport imp = (pvpImport)proc;
+
+	// Load .map
+	__int64 retval = imp(1, lastFilePath_map.c_str(), importData);
+
+	DeleteFileA(lastFilePath_map.c_str());
+
+	return retval;
+}
+
+LRESULT CALLBACK HookCallWndProc(int nCode, WPARAM wParam, LPARAM lParam)
+{
+	if (nCode < HC_ACTION)
+		return CallNextHookEx(hhookSysMsg, nCode, wParam, lParam);
+
+	if (GetCurrentThreadId() == MainThread && GetTickCount() - StartTicks > 500)
+	{
+		StartTicks = GetTickCount();
+		if (AutoReload && lastFilePath_umd.size())
+		{
+			if (GetLastEditTime(lastFilePath_umd) != lastEditTime)
+			{
+				lastEditTime = GetLastEditTime(lastFilePath_umd);
+				cell_list.clear();
+				if (!LoadMap(lastFilePath_umd))
+				{
+					lastFilePath_umd = std::string();
+				}
+				else
+				{
+					GenerateUnrealMap(lastFilePath_map, (float)atof(cell_size), (float)atof(cell_height), (float)atof(cell_x), (float)atof(cell_y), atoi(cell_levels), atoi(cell_layers));
+					cell_list.clear();
+
+					// Clear cache (but not hastable memory release)
+					*(__int64*)(importData + 0x18) = 0;
+					*(__int64*)(importData + 0x20) = 0;
+					*(__int64*)(importData + 0xC8) = 0;
+
+					if (!import_real())
+					{
+						lastFilePath_umd = std::string();
+					}
+				}
+			}
+		}
+	}
+	return CallNextHookEx(hhookSysMsg, nCode, wParam, lParam);
+}
+BOOL __stdcall DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
+{
+	if (fdwReason == DLL_PROCESS_DETACH)
+	{
+		UnhookWindowsHookEx(hhookSysMsg);
+	}
+	else if (fdwReason == DLL_PROCESS_ATTACH)
+	{
+		MainThread = GetCurrentThreadId();
+		hhookSysMsg = SetWindowsHookExW(WH_GETMESSAGE, HookCallWndProc, hinstDLL, GetCurrentThreadId());
+	}
+	return 1;
+}
+
+BOOL CALLBACK PrintAboutForJack(HWND hwnd, LPARAM lParam) {
+	DWORD processId = 0;
+	GetWindowThreadProcessId(hwnd, &processId);
+
+	DWORD targetProcessId = *reinterpret_cast<DWORD*>(lParam);
+
+	if (processId == targetProcessId) {
+		MessageBoxA(hwnd, actionDescription, "UnrealMapDrawTool .umd Import Plugin by Karaulov", 0);
+		return FALSE;
+	}
+	return TRUE;
+}
+
+__int64 dispatchFunc()
+{
+	DWORD processId = GetCurrentProcessId();
+	EnumWindows(PrintAboutForJack, reinterpret_cast<LPARAM>(&processId));
+	return 0;
+}
+
+#pragma pack(push, 1)
+
+struct JACK_ACTION
+{
+	const char* actionData[3];
+	__int64 state; // 
+	__int64 flags; // 0 is item enabled 1+ disabled
+	void* dispatch_func;
+	__int64 unknown;
+	__int64 id;
+	__int64 reserved;
+	__int64 reserved2;
+};
+
+#pragma pack(pop)
+
+JACK_ACTION tmpJACK_ACTION{ {actionName,actionDescription,actionDirectory}, 0 , 0, (void*)dispatchFunc, 0,0, 0,0 };
+
+__int64 dispatchFunc2();
+
+JACK_ACTION tmpJACK_ACTION2{ {actionName2,actionName2,actionDirectory}, 0 , 0, (void*)dispatchFunc2, 0, 5, 0,0 };
+
+BOOL CALLBACK PrintUpdateStateForJack(HWND hwnd, LPARAM lParam) {
+	DWORD processId = 0;
+	GetWindowThreadProcessId(hwnd, &processId);
+
+	DWORD targetProcessId = *reinterpret_cast<DWORD*>(lParam);
+
+	if (processId == targetProcessId) {
+		if (AutoReload)
+		{
+			MessageBoxA(hwnd, "Auto Reload enabled!", "UnrealMapDrawTool .umd Auto Reload enabled!", 0);
+		}
+		else
+		{
+			MessageBoxA(hwnd, "Auto Reload disabled!", "UnrealMapDrawTool .umd Auto Reload disabled!", 0);
+		}
+		return FALSE;
+	}
+	return TRUE;
+}
+
+__int64 dispatchFunc2()
+{
+	AutoReload = !AutoReload;
+
+	DWORD processId = GetCurrentProcessId();
+	EnumWindows(PrintUpdateStateForJack, reinterpret_cast<LPARAM>(&processId));
+	return 0;
+}
+
+typedef void(__fastcall* jackAddAction)(JACK_ACTION*, unsigned char* qlib);
+
+__int64 __fastcall vpEnumActions(jackAddAction addAction, unsigned char* qlib)
+{
+	addAction(&tmpJACK_ACTION, qlib);
+	addAction(&tmpJACK_ACTION2, qlib);
+	return 1;
+}
+
+__int64 __fastcall vpMain(void* unused, __int64 sdk_version)
+{
+	if (sdk_version != 100)
+		return 100LL;
+	setlocale(0, "C");
+	return 0LL;
+}
+
+bool __fastcall vpEnumImportFormats(__int64(__fastcall* jackAddImport)(int version, const char* name, const char* extension, unsigned char* qlib), unsigned char* qlib)
+{
+	return jackAddImport(0, actionFormatName, actionFormat, qlib) != 0;
+}
+
+__int64 __fastcall vpImport(int formatid, char* src, unsigned char* jack_data)
+{
+	char newSrcName[2048];
+	sprintf_s(newSrcName, 2048, "%s", src);
+
+	char address[2048];
+	sprintf_s(address, 2048, "%p", jack_data);
+	MessageBoxA(0, address, address, 0);
+
+	lastFilePath_umd = newSrcName;
+
+	newSrcName[strlen(src) - 1] = 'p';
+	newSrcName[strlen(src) - 2] = 'a';
+	newSrcName[strlen(src) - 3] = 'm';
+	newSrcName[strlen(src) - 4] = '.';
+
+	lastFilePath_map = newSrcName;
+
+	cell_list.clear();
+
+	if (!LoadMap(lastFilePath_umd))
+	{
+		lastFilePath_umd = std::string();
+		return 0;
+	}
+
+	GenerateUnrealMap(lastFilePath_map, (float)atof(cell_size), (float)atof(cell_height), (float)atof(cell_x), (float)atof(cell_y), atoi(cell_levels), atoi(cell_layers));
+	cell_list.clear(); 
+	
+	importData = jack_data;
+	return import_real();
+}
+
+
+#endif
+
+#ifndef JACK_PLUGIN
 
 int main(int, char**)
 {
@@ -1185,12 +1497,12 @@ int main(int, char**)
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, (fmt == 0) ? GL_BGRA : GL_RGBA, GL_UNSIGNED_BYTE, data);
 		glBindTexture(GL_TEXTURE_2D, 0);
 		return (void*)tex;
-	};
+		};
 
 	ifd::FileDialog::Instance().DeleteTexture = [](void* tex) {
 		GLuint texID = (GLuint)((uintptr_t)tex);
 		glDeleteTextures(1, &texID);
-	};
+		};
 
 	// Main loop
 	while (!glfwWindowShouldClose(window))
@@ -1222,3 +1534,4 @@ int main(int, char**)
 
 	return 0;
 }
+#endif
