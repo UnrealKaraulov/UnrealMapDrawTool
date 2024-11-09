@@ -243,13 +243,13 @@
   <ItemGroup>
     <ClCompile Include="../src/ImFileDialog.cpp" />
     <ClCompile Include="../src/imgui.cpp" />
-    <ClCompile Include="../src/imgui_demo.cpp" />
     <ClCompile Include="../src/imgui_draw.cpp" />
     <ClCompile Include="../src/imgui_impl_glfw.cpp" />
     <ClCompile Include="../src/imgui_impl_opengl3.cpp" />
     <ClCompile Include="../src/imgui_tables.cpp" />
     <ClCompile Include="../src/imgui_widgets.cpp" />
     <ClCompile Include="../src/main.cpp" />
+    <ClCompile Include="..\src\misc\cpp\imgui_stdlib.cpp" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)'=='JackPlugin'">
     <None Include="../src/jack_api.def" />
@@ -270,6 +270,17 @@
     <ClInclude Include="../src/imstb_textedit.h" />
     <ClInclude Include="../src/imstb_truetype.h" />
     <ClInclude Include="../src/stb_image.h" />
+    <ClInclude Include="..\src\magic_enum\magic_enum.hpp" />
+    <ClInclude Include="..\src\magic_enum\magic_enum_all.hpp" />
+    <ClInclude Include="..\src\magic_enum\magic_enum_containers.hpp" />
+    <ClInclude Include="..\src\magic_enum\magic_enum_flags.hpp" />
+    <ClInclude Include="..\src\magic_enum\magic_enum_format.hpp" />
+    <ClInclude Include="..\src\magic_enum\magic_enum_fuse.hpp" />
+    <ClInclude Include="..\src\magic_enum\magic_enum_iostream.hpp" />
+    <ClInclude Include="..\src\magic_enum\magic_enum_switch.hpp" />
+    <ClInclude Include="..\src\magic_enum\magic_enum_utility.hpp" />
+    <ClInclude Include="..\src\misc\cpp\imgui_stdlib.h" />
+    <ClInclude Include="..\src\misc\single_file\imgui_single_file.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

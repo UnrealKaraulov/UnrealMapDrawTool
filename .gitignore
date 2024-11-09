@@ -47,3 +47,7 @@ vc_project/x64/
 vc_project/Release/
 *.exe
 *.db
+*.ilk
+*.idb
+*.json
+*.command

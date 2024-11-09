@@ -33,10 +33,16 @@ static void glfw_error_callback(int error, const char* description)
 	std::cerr << "Glfw Error:" << error << "," << description << std::endl;
 }
 
+enum umd_flags : unsigned int {
+	UMD_TEXTURES_SKIP_OPTIMIZE = 1 << 0,
+	UMD_OPTIMIZE_DISABLED = 1 << 1
+};
+
 enum cell_type :unsigned char
 {
 	cell_none = 0,
 	cell_brush,
+	cell_wall,
 	cell_hostage,
 	cell_player_TT,
 	cell_player_CT,
@@ -46,14 +52,21 @@ enum cell_type :unsigned char
 	cell_waterzone
 };
 
+int UMD_MAGIC = 'umd2';
+
 struct cell
 {
 	unsigned char height;
 	unsigned char height_offset;
+	unsigned char texid;
 	cell_type type;
 };
 
+std::vector<std::string> texture_list = { "CRETE4_FLR02" };
+
 std::vector<cell> cell_list;
+
+unsigned int cell_flags = 0;
 
 bool cell_edit(cell& c, unsigned char new_height, unsigned char new_offset, cell_type new_type)
 {
@@ -110,7 +123,7 @@ ImVec4 get_cell_color(int id)
 	return get_cell_color(c_type);
 }
 #endif
-std::string GenerateCuboid(float x1, float y1, float z1, float x2, float y2, float z2, const char* texture = "AAATRIGGER")
+std::string GenerateCuboid(float x1, float y1, float z1, float x2, float y2, float z2, std::string texture = "AAATRIGGER")
 {
 	std::stringstream outcuboid;
 
@@ -133,32 +146,30 @@ std::string GenerateOriginString(float x, float y, float z)
 	return outcuboid.str();
 }
 
-float GetMinZ_fromPercent(float z, float cell_height, float z_offset)
+float GetMinZ_fromPercent(float z, int cell_height, float z_offset)
 {
 	return z + cell_height / 100.0f * z_offset;
 }
 
-float GetMaxZ_fromPercent(float z, float cell_height, float z_offset, float z_height)
+float GetMaxZ_fromPercent(float z, int cell_height, float z_offset, float z_height)
 {
 	return z + (cell_height / 100.0f * z_offset) + (cell_height / 100.0f * z_height);
 }
 
-float GetHeight_fromPercent(float cell_height, float z_height)
+float GetHeight_fromPercent(int cell_height, float z_height)
 {
 	return cell_height / 100.0f * z_height;
 }
 
-float GetHeightOffset_fromPercent(float cell_height, float z_offset)
+float GetHeightOffset_fromPercent(int cell_height, float z_offset)
 {
 	return cell_height / 100.0f * z_offset;
 }
 
 bool UseSkyBorders = false;
 
-void GenerateUnrealMap(const std::string & fpath, float cell_size, float cell_height, float cell_x, float cell_y, int cell_levels, int cell_layers)
+void GenerateUnrealMap(const std::string& fpath, int cell_size, int cell_height, int cell_x, int cell_y, int cell_levels, int cell_layers, int texid = 0)
 {
-	int cur_item = 0;
-
 	int x_min = 99999;
 	int x_max = -99999;
 
@@ -175,7 +186,8 @@ void GenerateUnrealMap(const std::string & fpath, float cell_size, float cell_he
 			{
 				for (int x = 0; x < cell_x; x++)
 				{
-					cell cur_cell = cell_list[cur_item];
+					int index = (lvl * cell_layers + layer) * cell_y * cell_x + y * cell_x + x;
+					cell cur_cell = cell_list[index];
 
 					if (cur_cell.type != cell_type::cell_none)
 					{
@@ -189,7 +201,6 @@ void GenerateUnrealMap(const std::string & fpath, float cell_size, float cell_he
 						if (y <= y_min)
 							y_min = y;
 					}
-					cur_item++;
 				}
 			}
 		}
@@ -198,15 +209,7 @@ void GenerateUnrealMap(const std::string & fpath, float cell_size, float cell_he
 	std::stringstream output_bruhes;
 	std::stringstream output_entities;
 
-	int tmp_item = 0;
-	cur_item = 0;
-
-	int cur_item_y_multiple = 1;
-	int cur_item_x_multiple = 1;
-
 	bool one_Light_found = false;
-
-	int lvl_save, layer_save, x_save, y_save;
 
 	float item_z_offset = -(cell_height * cell_levels / 2.0f);
 	float item_x_offset = -(cell_size * (abs(x_min) + abs(x_max) + 1) / 2.0f);
@@ -218,7 +221,7 @@ void GenerateUnrealMap(const std::string & fpath, float cell_size, float cell_he
 			item_z_offset - cell_size,
 			-item_x_offset,
 			-item_y_offset,
-			item_z_offset, "CRETE4_FLR02");
+			item_z_offset, texture_list[texid]);
 	output_bruhes << std::endl;
 
 	output_bruhes <<
@@ -226,7 +229,7 @@ void GenerateUnrealMap(const std::string & fpath, float cell_size, float cell_he
 			-item_z_offset,
 			-item_x_offset,
 			-item_y_offset,
-			-item_z_offset + cell_size, UseSkyBorders ? "SKY" : "CRETE4_WALL01C");
+			-item_z_offset + cell_size, UseSkyBorders ? "SKY" : texture_list[texid]);
 	output_bruhes << std::endl;
 
 	output_bruhes <<
@@ -234,7 +237,7 @@ void GenerateUnrealMap(const std::string & fpath, float cell_size, float cell_he
 			item_z_offset - cell_size,
 			item_x_offset,
 			-item_y_offset,
-			-item_z_offset + cell_size, UseSkyBorders ? "SKY" : "CRETE4_WALL01C");
+			-item_z_offset + cell_size, UseSkyBorders ? "SKY" : texture_list[texid]);
 	output_bruhes << std::endl;
 
 	output_bruhes <<
@@ -242,7 +245,7 @@ void GenerateUnrealMap(const std::string & fpath, float cell_size, float cell_he
 			item_z_offset - cell_size,
 			-item_x_offset + cell_size,
 			-item_y_offset,
-			-item_z_offset + cell_size, UseSkyBorders ? "SKY" : "CRETE4_WALL01C");
+			-item_z_offset + cell_size, UseSkyBorders ? "SKY" : texture_list[texid]);
 	output_bruhes << std::endl;
 
 	output_bruhes <<
@@ -250,7 +253,7 @@ void GenerateUnrealMap(const std::string & fpath, float cell_size, float cell_he
 			item_z_offset - cell_size,
 			-item_x_offset + cell_size,
 			item_y_offset,
-			-item_z_offset + cell_size, UseSkyBorders ? "SKY" : "CRETE4_WALL01C");
+			-item_z_offset + cell_size, UseSkyBorders ? "SKY" : texture_list[texid]);
 	output_bruhes << std::endl;
 
 	output_bruhes <<
@@ -258,9 +261,8 @@ void GenerateUnrealMap(const std::string & fpath, float cell_size, float cell_he
 			item_z_offset - cell_size,
 			-item_x_offset + cell_size,
 			-item_y_offset - cell_size,
-			-item_z_offset + cell_size, UseSkyBorders ? "SKY" : "CRETE4_WALL01C");
+			-item_z_offset + cell_size, UseSkyBorders ? "SKY" : texture_list[texid]);
 	output_bruhes << std::endl;
-
 
 	for (int lvl = 0; lvl < cell_levels; lvl++)
 	{
@@ -270,107 +272,168 @@ void GenerateUnrealMap(const std::string & fpath, float cell_size, float cell_he
 			{
 				for (int x = 0; x < cell_x; x++)
 				{
-					cell cur_cell = cell_list[cur_item];
+					int index = (lvl * cell_layers + layer) * cell_y * cell_x + y * cell_x + x;
+					cell& cur_cell = cell_list[index];
 
 					if (cur_cell.type != cell_type::cell_none)
 					{
-						tmp_item = cur_item;
-						lvl_save = lvl;
-						layer_save = layer;
-						x_save = x;
-						y_save = y;
+						int cur_item_y_multiple = 1;
+						int cur_item_x_multiple = 1;
+						int cur_item_z_multiple = 1;
 
-						cur_item_y_multiple = 1;
-						cur_item_x_multiple = 1;
-
-						// search X multiple
-						if (x + 1 < cell_x)
+						// Поиск Z multiple
+						if (lvl + 1 < cell_levels && !(cell_flags & umd_flags::UMD_OPTIMIZE_DISABLED))
 						{
-							bool ignore_other = false;
-							x++;
-							tmp_item++;
-							for (; x < cell_x; x++)
+							for (int multz = lvl + 1; multz < cell_levels; multz++)
 							{
-								cell next_cell = cell_list[tmp_item];
-								if (!ignore_other && next_cell.type == cur_cell.type &&
-									next_cell.height == cur_cell.height &&
-									next_cell.height_offset == cur_cell.height_offset && (cur_cell.type == cell_type::cell_bombzone
-										|| cur_cell.type == cell_type::cell_buyzone || cur_cell.type == cell_type::cell_brush
-										|| cur_cell.type == cell_type::cell_waterzone))
+								bool match = true;
+								for (int multy = 0; multy < cur_item_y_multiple; multy++)
+								{
+									for (int multx = 0; multx < cur_item_x_multiple; multx++)
+									{
+										int multindex = (multz * cell_layers + layer) * cell_y * cell_x + (y + multy) * cell_x + x + multx;
+										cell& multcell = cell_list[multindex];
+										if (!(multcell.type == cur_cell.type &&
+											multcell.height == cur_cell.height &&
+											multcell.height_offset == cur_cell.height_offset)
+											|| (cell_flags & umd_flags::UMD_TEXTURES_SKIP_OPTIMIZE && multcell.texid != cur_cell.texid))
+										{
+											match = false;
+											break;
+										}
+									}
+									if (!match) break;
+								}
+								if (match)
+								{
+									cur_item_z_multiple++;
+									for (int multy = 0; multy < cur_item_y_multiple; multy++)
+									{
+										for (int multx = 0; multx < cur_item_x_multiple; multx++)
+										{
+											int multindex = (multz * cell_layers + layer) * cell_y * cell_x + (y + multy) * cell_x + x + multx;
+											cell& multcell = cell_list[multindex];
+											multcell.height = 0;
+											multcell.height_offset = 0;
+											multcell.texid = 0;
+											multcell.type = cell_type::cell_none;
+										}
+									}
+								}
+								else
+								{
+									break;
+								}
+							}
+						}
+
+						// Поиск Y multiple (с учетом Z multiple)
+						if (y + 1 < cell_y && !(cell_flags & umd_flags::UMD_OPTIMIZE_DISABLED))
+						{
+							for (int multy = y + 1; multy < cell_y; multy++)
+							{
+								bool match = true;
+								for (int multz = 0; multz < cur_item_z_multiple; multz++)
+								{
+									int multindex = (lvl + multz) * cell_layers * cell_y * cell_x + multy * cell_x + x;
+									cell& multcell = cell_list[multindex];
+									if (!(multcell.type == cur_cell.type &&
+										multcell.height == cur_cell.height &&
+										multcell.height_offset == cur_cell.height_offset) 
+										|| (cell_flags & umd_flags::UMD_TEXTURES_SKIP_OPTIMIZE && multcell.texid != cur_cell.texid))
+									{
+										match = false;
+										break;
+									}
+								}
+								if (match)
+								{
+									cur_item_y_multiple++;
+									for (int multz = 0; multz < cur_item_z_multiple; multz++)
+									{
+										int multindex = (lvl + multz) * cell_layers * cell_y * cell_x + multy * cell_x + x;
+										cell& multcell = cell_list[multindex];
+										multcell.height = 0;
+										multcell.height_offset = 0;
+										multcell.texid = 0;
+										multcell.type = cell_type::cell_none;
+									}
+								}
+								else
+								{
+									break;
+								}
+							}
+						}
+
+						// Поиск X multiple (с учетом Y и Z multiple)
+						if (x + 1 < cell_x && !(cell_flags & umd_flags::UMD_OPTIMIZE_DISABLED))
+						{
+							for (int multx = x + 1; multx < cell_x; multx++)
+							{
+								bool match = true;
+								for (int multz = 0; multz < cur_item_z_multiple; multz++)
+								{
+									for (int multy = 0; multy < cur_item_y_multiple; multy++)
+									{
+										int multindex = (lvl + multz) * cell_layers * cell_y * cell_x + (y + multy) * cell_x + multx;
+										cell& multcell = cell_list[multindex];
+										if (!(multcell.type == cur_cell.type &&
+											multcell.height == cur_cell.height &&
+											multcell.height_offset == cur_cell.height_offset)
+											|| (cell_flags & umd_flags::UMD_TEXTURES_SKIP_OPTIMIZE && multcell.texid != cur_cell.texid))
+										{
+											match = false;
+											break;
+										}
+									}
+									if (!match) break;
+								}
+								if (match)
 								{
 									cur_item_x_multiple++;
-									cell_list[tmp_item].height = 0;
-									cell_list[tmp_item].height_offset = 0;
-									cell_list[tmp_item].type = cell_type::cell_none;
+									for (int multz = 0; multz < cur_item_z_multiple; multz++)
+									{
+										for (int multy = 0; multy < cur_item_y_multiple; multy++)
+										{
+											int multindex = (lvl + multz) * cell_layers * cell_y * cell_x + (y + multy) * cell_x + multx;
+											cell& multcell = cell_list[multindex];
+											multcell.height = 0;
+											multcell.height_offset = 0;
+											multcell.texid = 0;
+											multcell.type = cell_type::cell_none;
+										}
+									}
 								}
 								else
 								{
-									ignore_other = true;
+									break;
 								}
-								tmp_item++;
 							}
 						}
-
-						bool y_search = true;
-						while (y + 1 < cell_y && y_search)
-						{
-							std::vector<int> items_for_erase;
-							y++;
-							for (x = 0; x < x_save; x++)
-							{
-								tmp_item++;
-							}
-							int tmp_x_multiple = 0;
-
-							bool ignore_other = false;
-							for (; x < cell_x; x++)
-							{
-								cell next_cell = cell_list[tmp_item];
-								if (tmp_x_multiple < cur_item_x_multiple && !ignore_other && next_cell.type == cur_cell.type &&
-									next_cell.height == cur_cell.height &&
-									next_cell.height_offset == cur_cell.height_offset && (cur_cell.type == cell_type::cell_bombzone
-										|| cur_cell.type == cell_type::cell_buyzone || cur_cell.type == cell_type::cell_brush
-										|| cur_cell.type == cell_type::cell_waterzone))
-								{
-									tmp_x_multiple++;
-									items_for_erase.push_back(tmp_item);
-								}
-								else
-								{
-									ignore_other = true;
-								}
-								tmp_item++;
-							}
-
-
-							if (tmp_x_multiple == cur_item_x_multiple)
-							{
-								cur_item_y_multiple++;
-								for (int erase_cell_id : items_for_erase)
-								{
-									cell_list[erase_cell_id].height = 0;
-									cell_list[erase_cell_id].height_offset = 0;
-									cell_list[erase_cell_id].type = cell_type::cell_none;
-								}
-							}
-							else
-								break;
-						}
-
-						lvl = lvl_save;
-						layer = layer_save;
-						x = x_save;
-						y = y_save;
 
 						if (cur_cell.type == cell_type::cell_brush)
 						{
-							output_bruhes <<
-								GenerateCuboid(item_x_offset + x * cell_size, item_y_offset - y * cell_size,
-									GetMinZ_fromPercent(item_z_offset, cell_height, (float)cur_cell.height_offset),
-									item_x_offset + x * cell_size + cell_size * cur_item_x_multiple,
-									item_y_offset - (y * cell_size + cell_size * cur_item_y_multiple),
-									GetMaxZ_fromPercent(item_z_offset, cell_height, (float)cur_cell.height_offset, (float)cur_cell.height), "TNNL_FLR7");
-							output_bruhes << std::endl;
+							if (cur_item_z_multiple > 1)
+							{
+								output_bruhes <<
+									GenerateCuboid(item_x_offset + x * cell_size, item_y_offset - y * cell_size,
+										item_z_offset,
+										item_x_offset + x * cell_size + cell_size * cur_item_x_multiple,
+										item_y_offset - (y * cell_size + cell_size * cur_item_y_multiple),
+										item_z_offset + cell_height * cur_item_z_multiple, cur_cell.texid < texture_list.size() ? texture_list[cur_cell.texid] : "AAATRIGGER");
+								output_bruhes << std::endl;
+							}
+							else
+							{
+								output_bruhes <<
+									GenerateCuboid(item_x_offset + x * cell_size, item_y_offset - y * cell_size,
+										GetMinZ_fromPercent(item_z_offset, cell_height, (float)cur_cell.height_offset),
+										item_x_offset + x * cell_size + cell_size * cur_item_x_multiple,
+										item_y_offset - (y * cell_size + cell_size * cur_item_y_multiple),
+										GetMaxZ_fromPercent(item_z_offset, cell_height, (float)cur_cell.height_offset, (float)cur_cell.height), cur_cell.texid < texture_list.size() ? texture_list[cur_cell.texid] : "AAATRIGGER");
+								output_bruhes << std::endl;
+							}
 						}
 						else
 						{
@@ -400,29 +463,59 @@ void GenerateUnrealMap(const std::string & fpath, float cell_size, float cell_he
 								output_entities << std::endl;
 							}
 							else if (cur_cell.type == cell_type::cell_buyzone || cur_cell.type == cell_type::cell_bombzone
-								|| cur_cell.type == cell_type::cell_waterzone)
+								|| cur_cell.type == cell_type::cell_waterzone || cur_cell.type == cell_wall)
 							{
 								if (cur_cell.type == cell_type::cell_buyzone)
+								{
 									output_entities << "\"classname\" \"func_buyzone\"" << std::endl;
+								}
 								else if (cur_cell.type == cell_type::cell_waterzone)
 								{
 									output_entities << "\"classname\" \"func_water\"" << std::endl;
 									output_entities << "\"skin\" \"-3\"" << std::endl;
 								}
+								else if (cur_cell.type == cell_type::cell_wall)
+								{
+									output_entities << "\"classname\" \"func_wall\"" << std::endl;
+								}
 								else
+								{
 									output_entities << "\"classname\" \"func_bomb_target\"" << std::endl;
-								output_entities <<
-									GenerateCuboid(item_x_offset + x * cell_size, item_y_offset - y * cell_size,
-										GetMinZ_fromPercent(item_z_offset, cell_height, (float)cur_cell.height_offset),
-										item_x_offset + x * cell_size + cell_size * cur_item_x_multiple,
-										item_y_offset - (y * cell_size + cell_size * cur_item_y_multiple),
-										GetMaxZ_fromPercent(item_z_offset, cell_height, (float)cur_cell.height_offset, (float)cur_cell.height), cur_cell.type == cell_type::cell_waterzone ? "!WATER2B" : "AAATRIGGER");
-								output_entities << std::endl;
+								}
+								std::string texName = cur_cell.texid < texture_list.size() ? texture_list[cur_cell.texid] : "AAATRIGGER";
+
+								if (cur_cell.type == cell_type::cell_bombzone
+									|| cur_cell.type == cell_type::cell_buyzone)
+								{
+									texName = "AAATRIGGER";
+								}
+
+								if (cur_item_z_multiple > 1)
+								{
+									
+
+									output_entities <<
+										GenerateCuboid(item_x_offset + x * cell_size, item_y_offset - y * cell_size,
+											item_z_offset,
+											item_x_offset + x * cell_size + cell_size * cur_item_x_multiple,
+											item_y_offset - (y * cell_size + cell_size * cur_item_y_multiple),
+											item_z_offset + cell_height * cur_item_z_multiple, texName);
+									output_entities << std::endl;
+								}
+								else
+								{
+									output_entities <<
+										GenerateCuboid(item_x_offset + x * cell_size, item_y_offset - y * cell_size,
+											GetMinZ_fromPercent(item_z_offset, cell_height, (float)cur_cell.height_offset),
+											item_x_offset + x * cell_size + cell_size * cur_item_x_multiple,
+											item_y_offset - (y * cell_size + cell_size * cur_item_y_multiple),
+											GetMaxZ_fromPercent(item_z_offset, cell_height, (float)cur_cell.height_offset, (float)cur_cell.height), texName);
+									output_entities << std::endl;
+								}
 							}
 							output_entities << "}" << std::endl;
 						}
 					}
-					cur_item++;
 				}
 			}
 		}
@@ -508,13 +601,26 @@ const char* atoint_static(const char* s)
 
 
 
-bool LoadMap(std::string path)
+bool LoadMap(const std::string& path)
 {
 	int tmp_int_value = 0;
 	std::ifstream tmpmap(path, std::ios::in | std::ios::binary);
 	if (tmpmap && tmpmap.is_open())
 	{
 		tmpmap.read((char*)&tmp_int_value, 4);
+		bool read_textures = true;
+		if (tmp_int_value == UMD_MAGIC)
+		{
+			// 4x zero
+			tmpmap.read((char*)&tmp_int_value, 4);
+			tmpmap.read((char*)&tmp_int_value, 4);
+			tmpmap.read((char*)&tmp_int_value, 4);
+			tmpmap.read((char*)&tmp_int_value, 4);
+
+
+			tmpmap.read((char*)&tmp_int_value, 4);
+		}
+
 		snprintf(cell_x, sizeof(cell_x), "%d", tmp_int_value);
 		tmpmap.read((char*)&tmp_int_value, 4);
 		snprintf(cell_y, sizeof(cell_y), "%d", tmp_int_value);
@@ -530,6 +636,7 @@ bool LoadMap(std::string path)
 		cell tmpcell = cell();
 		tmpcell.height = 0;
 		tmpcell.height_offset = 0;
+		tmpcell.texid = 0;
 		tmpcell.type = cell_none;
 		cell_list.clear();
 
@@ -543,6 +650,7 @@ bool LoadMap(std::string path)
 					{
 						tmpmap.read((char*)&tmpcell.height, 1);
 						tmpmap.read((char*)&tmpcell.height_offset, 1);
+						tmpmap.read((char*)&tmpcell.texid, 1);
 						tmpmap.read((char*)&tmpcell.type, 1);
 						cell_list.push_back(tmpcell);
 					}
@@ -554,9 +662,28 @@ bool LoadMap(std::string path)
 		int skybool = UseSkyBorders ? 1 : 0;
 		tmpmap.read((char*)&skybool, 4);
 
+		tmpmap.read((char*)&cell_flags, 4);
+
 		UseSkyBorders = skybool != 0;
 
 		setup_end = true;
+
+		if (read_textures)
+		{
+			texture_list.clear();
+			int textureCount;
+			tmpmap.read(reinterpret_cast<char*>(&textureCount), 4);
+
+			for (int i = 0; i < textureCount; ++i) 
+			{
+				int length;
+				tmpmap.read(reinterpret_cast<char*>(&length), 4);
+				std::string texture(length, '\0');
+				tmpmap.read(&texture[0], length);
+				texture_list.push_back(texture);
+			}
+		}
+
 		tmpmap.close();
 		return true;
 	}
@@ -661,7 +788,7 @@ void DrawUnrealGUI()
 		else if (atoi(cell_layers) > 32)
 		{
 			snprintf(cell_layers, sizeof(cell_layers), "%d", 32);
-		}
+}
 #ifdef RUSSIAN_LANGUAGE
 		if (ImGui::Button("НОВАЯ КАРТА"))
 #else
@@ -671,6 +798,7 @@ void DrawUnrealGUI()
 			cell tmpcell = cell();
 			tmpcell.height = 0;
 			tmpcell.height_offset = 0;
+			tmpcell.texid = 0;
 			tmpcell.type = cell_none;
 			cell_list.clear();
 
@@ -697,7 +825,7 @@ void DrawUnrealGUI()
 				LoadMap(res.string());
 			}
 			ifd::FileDialog::Instance().Close();
-		}
+			}
 
 #ifdef RUSSIAN_LANGUAGE
 		if (ImGui::Button("ЗАГРУЗИТЬ КАРТУ"))
@@ -802,7 +930,7 @@ void DrawUnrealGUI()
 		if (LastSaveString.empty())
 		{
 			ImGui::EndDisabled();
-		}
+					}
 
 #ifdef RUSSIAN_LANGUAGE
 		if (ImGui::Button("Залить весь слой"))
@@ -824,6 +952,7 @@ void DrawUnrealGUI()
 			cell tmpcell = cell();
 			tmpcell.height = 0;
 			tmpcell.height_offset = 0;
+			tmpcell.texid = 0;
 			tmpcell.type = cell_none;
 			cell_list.clear();
 
@@ -863,8 +992,8 @@ void DrawUnrealGUI()
 				std::filesystem::path res = ifd::FileDialog::Instance().GetResult();
 
 				std::vector<cell> tmp_cell_list = cell_list;
-				GenerateUnrealMap(res.string(), (float)atof(cell_size), (float)atof(cell_height), (float)atof(cell_x), (float)atof(cell_y), atoi(cell_levels), atoi(cell_layers));
-				cell_list = tmp_cell_list;
+				GenerateUnrealMap(res.string(), atoi(cell_size), atoi(cell_height), atoi(cell_x), atoi(cell_y), atoi(cell_levels), atoi(cell_layers));
+				cell_list = std::move(tmp_cell_list);
 			}
 			ifd::FileDialog::Instance().Close();
 		}
@@ -894,6 +1023,7 @@ void DrawUnrealGUI()
 				std::ofstream tmpmap(LastSaveString, std::ios::out | std::ios::binary);
 				if (tmpmap.is_open())
 				{
+					tmpmap.write(reinterpret_cast<const char*>(&UMD_MAGIC), 4);
 					tmpmap.write((const char*)atoint_static(cell_x), 4);
 					tmpmap.write((const char*)atoint_static(cell_y), 4);
 					tmpmap.write((const char*)atoint_static(cell_size), 4);
@@ -913,6 +1043,7 @@ void DrawUnrealGUI()
 									unsigned char tmpc_type = (unsigned char)tmpcell.type;
 									tmpmap.write((const char*)&tmpcell.height, 1);
 									tmpmap.write((const char*)&tmpcell.height_offset, 1);
+									tmpmap.write((const char*)&tmpcell.texid, 1);
 									tmpmap.write((const char*)&tmpc_type, 1);
 									cur_item++;
 								}
@@ -922,6 +1053,15 @@ void DrawUnrealGUI()
 
 					int skybool = UseSkyBorders ? 1 : 0;
 					tmpmap.write((const char*)&skybool, 4);
+
+					int textureCount = (int)texture_list.size();
+					tmpmap.write(reinterpret_cast<const char*>(&textureCount), 4);
+
+					for (const auto& texture : texture_list) {
+						int length = texture.length();
+						tmpmap.write(reinterpret_cast<const char*>(&length), 4);
+						tmpmap.write(texture.c_str(), length);
+					}
 
 					tmpmap.close();
 				}
@@ -1017,7 +1157,7 @@ void DrawUnrealGUI()
 								{
 									if (cell_list[cur_item].height != 100 || cell_list[cur_item].height_offset != 0)
 									{
-										if (cell_edit(cell_list[cur_item],100,0, cell_list[cur_item].type))
+										if (cell_edit(cell_list[cur_item], 100, 0, cell_list[cur_item].type))
 										{
 											NeedSaveChanges = true;
 										}
@@ -1064,12 +1204,12 @@ void DrawUnrealGUI()
 									{
 #ifdef RUSSIAN_LANGUAGE
 										if (cell_list[cur_item].type != cell_type::cell_light)
-											ImGui::Text("Высота %d", (int)GetHeight_fromPercent((float)atoi(cell_height), cell_list[cur_item].height));
-										ImGui::Text("От земли %d", (int)GetHeightOffset_fromPercent((float)atoi(cell_height), cell_list[cur_item].height_offset));
+											ImGui::Text("Высота %d", (int)GetHeight_fromPercent(atoi(cell_height), cell_list[cur_item].height));
+										ImGui::Text("От земли %d", (int)GetHeightOffset_fromPercent(atoi(cell_height), cell_list[cur_item].height_offset));
 #else 
 										if (cell_list[cur_item].type != cell_type::cell_light)
-											ImGui::Text("Height %d units", (int)GetHeight_fromPercent((float)atoi(cell_height), cell_list[cur_item].height));
-										ImGui::Text("Height start %d units", (int)GetHeightOffset_fromPercent((float)atoi(cell_height), cell_list[cur_item].height_offset));
+											ImGui::Text("Height %d units", (int)GetHeight_fromPercent(atoi(cell_height), cell_list[cur_item].height));
+										ImGui::Text("Height start %d units", (int)GetHeightOffset_fromPercent(atoi(cell_height), cell_list[cur_item].height_offset));
 #endif
 									}
 									ImGui::EndTooltip();
@@ -1117,6 +1257,7 @@ void DrawUnrealGUI()
 									cell_list[cur_item].type = cell_type::cell_none;
 									cell_list[cur_item].height = 0;
 									cell_list[cur_item].height_offset = 0;
+									cell_list[cur_item].texid = 0;
 
 									if (AutoSave)
 									{
@@ -1250,7 +1391,7 @@ LRESULT CALLBACK HookCallWndProc(int nCode, WPARAM wParam, LPARAM lParam)
 				}
 				else
 				{
-					GenerateUnrealMap(lastFilePath_map, (float)atof(cell_size), (float)atof(cell_height), (float)atof(cell_x), (float)atof(cell_y), atoi(cell_levels), atoi(cell_layers));
+					GenerateUnrealMap(lastFilePath_map, atoi(cell_size), atoi(cell_height), atoi(cell_x), atoi(cell_y), atoi(cell_levels), atoi(cell_layers));
 					cell_list.clear();
 
 					// Clear cache (but not hastable memory release)
@@ -1289,7 +1430,7 @@ BOOL CALLBACK PrintAboutForJack(HWND hwnd, LPARAM lParam) {
 	DWORD targetProcessId = *reinterpret_cast<DWORD*>(lParam);
 
 	if (processId == targetProcessId) {
-		MessageBoxA(hwnd, actionDescription, "UnrealMapDrawTool .umd Import Plugin by Karaulov", 0);
+		MessageBoxA(hwnd, actionDescription, "UnrealMapDrawTool .umd Import Plugin by Karaulov\nUnreal Map Draw Tool 1.16", 0);
 		return FALSE;
 	}
 	return TRUE;
@@ -1380,9 +1521,9 @@ __int64 __fastcall vpImport(int formatid, char* src, unsigned char* jack_data)
 	char newSrcName[2048];
 	sprintf_s(newSrcName, 2048, "%s", src);
 
-	char address[2048];
+	/*char address[2048];
 	sprintf_s(address, 2048, "%p", jack_data);
-	MessageBoxA(0, address, address, 0);
+	MessageBoxA(0, address, address, 0);*/
 
 	lastFilePath_umd = newSrcName;
 
@@ -1401,12 +1542,12 @@ __int64 __fastcall vpImport(int formatid, char* src, unsigned char* jack_data)
 		return 0;
 	}
 
-	GenerateUnrealMap(lastFilePath_map, (float)atof(cell_size), (float)atof(cell_height), (float)atof(cell_x), (float)atof(cell_y), atoi(cell_levels), atoi(cell_layers));
-	cell_list.clear(); 
-	
+	GenerateUnrealMap(lastFilePath_map, atoi(cell_size), atoi(cell_height), atoi(cell_x), atoi(cell_y), atoi(cell_levels), atoi(cell_layers));
+	cell_list.clear();
+
 	importData = jack_data;
 	return import_real();
-}
+				}
 
 
 #endif
@@ -1444,7 +1585,7 @@ int main(int, char**)
 #endif
 
 	// Create window with graphics context
-	GLFWwindow* window = glfwCreateWindow(960, 620, "Unreal Map Draw Tool 1.10", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(960, 620, "Unreal Map Draw Tool 1.16", NULL, NULL);
 	if (window == NULL)
 		return 1;
 
@@ -1533,5 +1674,5 @@ int main(int, char**)
 	glfwTerminate();
 
 	return 0;
-}
+			}
 #endif

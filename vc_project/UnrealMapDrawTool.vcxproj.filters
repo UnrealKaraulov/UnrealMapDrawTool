@@ -20,9 +20,6 @@
     <ClCompile Include="../src/imgui.cpp">
       <Filter>IMGUI_SRC</Filter>
     </ClCompile>
-    <ClCompile Include="../src/imgui_demo.cpp">
-      <Filter>IMGUI_SRC</Filter>
-    </ClCompile>
     <ClCompile Include="../src/imgui_draw.cpp">
       <Filter>IMGUI_SRC</Filter>
     </ClCompile>
@@ -41,6 +38,9 @@
     <ClCompile Include="../src/main.cpp" />
     <ClCompile Include="../src/ImFileDialog.cpp">
       <Filter>FILEDIALOG_SRC</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\misc\cpp\imgui_stdlib.cpp">
+      <Filter>IMGUI_SRC</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -88,6 +88,39 @@
     </ClInclude>
     <ClInclude Include="../src/GLFW/glfw3native.h">
       <Filter>GLFW_SRC</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\misc\cpp\imgui_stdlib.h">
+      <Filter>IMGUI_H</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\misc\single_file\imgui_single_file.h">
+      <Filter>IMGUI_H</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\magic_enum\magic_enum.hpp">
+      <Filter>IMGUI_H</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\magic_enum\magic_enum_all.hpp">
+      <Filter>IMGUI_H</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\magic_enum\magic_enum_containers.hpp">
+      <Filter>IMGUI_H</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\magic_enum\magic_enum_flags.hpp">
+      <Filter>IMGUI_H</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\magic_enum\magic_enum_format.hpp">
+      <Filter>IMGUI_H</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\magic_enum\magic_enum_fuse.hpp">
+      <Filter>IMGUI_H</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\magic_enum\magic_enum_iostream.hpp">
+      <Filter>IMGUI_H</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\magic_enum\magic_enum_switch.hpp">
+      <Filter>IMGUI_H</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\magic_enum\magic_enum_utility.hpp">
+      <Filter>IMGUI_H</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
