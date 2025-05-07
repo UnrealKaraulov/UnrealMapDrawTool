@@ -620,6 +620,10 @@ bool LoadMap(const std::string& path)
 
 			tmpmap.read((char*)&tmp_int_value, 4);
 		}
+		else
+		{
+			read_textures = false;
+		}
 
 		snprintf(cell_x, sizeof(cell_x), "%d", tmp_int_value);
 		tmpmap.read((char*)&tmp_int_value, 4);
